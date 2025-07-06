@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Click Point - Gestión Comercial</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center">
+
+  <div class="w-full max-w-3xl p-6 bg-white rounded-2xl shadow-lg">
+    <!-- Título de la empresa -->
+    <h1 class="text-4xl font-extrabold text-center text-blue-800 mb-2">Click Point</h1>
+    <p class="text-center text-gray-600 text-lg mb-6">Sistema de Gestión Comercial</p>
+
+    <!-- Botones principales -->
+    <div class="grid grid-cols-2 gap-6">
+      <button onclick="mostrarFormulario('mercaderia')" class="bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-xl text-lg font-semibold">Ingreso Mercadería</button>
+      <button onclick="mostrarFormulario('venta')" class="bg-green-600 hover:bg-green-700 text-white py-4 rounded-xl text-lg font-semibold">Venta</button>
+      <button onclick="mostrarFormulario('gasto')" class="bg-red-600 hover:bg-red-700 text-white py-4 rounded-xl text-lg font-semibold">Gastos</button>
+      <button onclick="mostrarFormulario('consulta')" class="bg-gray-700 hover:bg-gray-800 text-white py-4 rounded-xl text-lg font-semibold">Consultas</button>
+    </div>
+
+    <!-- Contenedor dinámico de formularios -->
+    <div id="formulario" class="mt-10 hidden">
+      <!-- Se insertan dinámicamente los formularios aquí -->
+    </div>
+  </div>
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
+
+  <script>
+    // Configuración de Firebase (REEMPLAZAR con tu propia configuración)
+    const firebaseConfig = {
+      apiKey: "TU_API_KEY",
+      authDomain: "TU_PROYECTO.firebaseapp.com",
+      databaseURL: "https://TU_PROYECTO-default-rtdb.firebaseio.com",
+      projectId: "TU_PROYECTO",
+      storageBucket: "TU_PROYECTO.appspot.com",
+      messagingSenderId: "TU_SENDER_ID",
+      appId: "TU_APP_ID"
+    };
+
+    // Inicializar Firebase
+    firebase.initializeApp(firebaseConfig);
+    const database = firebase.database();
+
+    // Función para guardar datos en Firebase
+    function guardarMercaderia(data) {
+      const nuevaEntrada = database.ref('mercaderia').push();
+      nuevaEntrada.set(data);
+    }
+
+    // Mostrar formulario dinámicamente
+    function mostrarFormulario(tipo) {
+      const contenedor = document.getElementById("formulario");
+      contenedor.classList.remove("hidden");
+
+      if (tipo === "mercaderia") {
+        contenedor.innerHTML = `
+          <h2 class="text-2xl font-bold mb-4 text-blue-700">Ingreso de Mercadería</h2>
+          <form id="form-mercaderia" class="grid grid-cols-1 gap-4">
+            <input class="border p-2 rounded" type="text" placeholder="IMEI" required>
+            <input class="border p-2 rounded" type="text" placeholder="Modelo" required>
+            <input class="border p-2 rounded" type="text" placeholder="Color" required>
+            <input class="border p-2 rounded" type="text" placeholder="Duración de batería">
+            <input class="border p-2 rounded" type="number" placeholder="Precio de compra" required>
+            <input class="border p-2 rounded" type="number" placeholder="Precio de venta" required>
+            <input class="border p-2 rounded" type="date" placeholder="Fecha de ingreso" required>
+            <select class="border p-2 rounded">
+              <option value="">Estado</option>
+              <option value="nuevo">Nuevo</option>
+              <option value="usado">Usado</option>
+            </select>
+            <textarea class="border p-2 rounded" placeholder="Observaciones..."></textarea>
+            <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white py-2 rounded">Guardar</button>
+          </form>
+        `;
+      } else {
+        contenedor.innerHTML = `
+          <h2 class="text-2xl font-bold mb-4 capitalize text-gray-800">${tipo}</h2>
+          <p class="text-gray-600">Formulario para <strong>${tipo}</strong> en desarrollo...</p>
+        `;
+      }
+    }
+
+    // Capturar el envío del formulario y guardar en Firebase
+    document.addEventListener('submit', function(e) {
+      if (e.target && e.target.id === 'form-mercaderia') {
+        e.preventDefault();
+
+        const form = e.target;
+        const data = {
+          imei: form[0].value,
+          modelo: form[1].value,
+          color: form[2].value,
+          duracionBateria: form[3].value,
+          precioCompra: parseFloat(form[4].value),
+          precioVenta: parseFloat(form[5].value),
+          fechaIngreso: form[6].value,
+          estado: form[7].value,
+          observaciones: form[8].value,
+          creadoEn: new Date().toISOString()
+        };
+
+        guardarMercaderia(data);
+        alert('📦 Mercadería guardada con éxito en Firebase');
+        form.reset();
+      }
+    });
+  </script>
+</body>
+</html>

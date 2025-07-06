@@ -9,11 +9,9 @@
 <body class="bg-gray-100 min-h-screen flex items-center justify-center">
 
   <div class="w-full max-w-3xl p-6 bg-white rounded-2xl shadow-lg">
-    <!-- Título de la empresa -->
     <h1 class="text-4xl font-extrabold text-center text-blue-800 mb-2">Click Point</h1>
     <p class="text-center text-gray-600 text-lg mb-6">Sistema de Gestión Comercial</p>
 
-    <!-- Botones principales -->
     <div class="grid grid-cols-2 gap-6">
       <button onclick="mostrarFormulario('mercaderia')" class="bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-xl text-lg font-semibold">Ingreso Mercadería</button>
       <button onclick="mostrarFormulario('venta')" class="bg-green-600 hover:bg-green-700 text-white py-4 rounded-xl text-lg font-semibold">Venta</button>
@@ -21,14 +19,28 @@
       <button onclick="mostrarFormulario('consulta')" class="bg-gray-700 hover:bg-gray-800 text-white py-4 rounded-xl text-lg font-semibold">Consultas</button>
     </div>
 
-    <!-- Contenedor dinámico de formularios -->
-    <div id="formulario" class="mt-10 hidden">
-      <!-- Se insertan dinámicamente los formularios aquí -->
-    </div>
+    <div id="formulario" class="mt-10 hidden"></div>
   </div>
 
-  <!-- Script para mostrar formularios -->
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
+
   <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyA3x2yGgT_hkYV2UB6BY2fumB7THcyQRVE",
+      authDomain: "clickpoint-59d0b.firebaseapp.com",
+      databaseURL: "https://clickpoint-59d0b-default-rtdb.firebaseio.com",
+      projectId: "clickpoint-59d0b",
+      storageBucket: "clickpoint-59d0b.appspot.com",
+      messagingSenderId: "1061481442398",
+      appId: "1:1061481442398:web:2013f1e269490a702b18cf",
+      measurementId: "G-EPG8547HT7"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
     function mostrarFormulario(tipo) {
       const contenedor = document.getElementById("formulario");
       contenedor.classList.remove("hidden");
@@ -43,7 +55,7 @@
             <input class="border p-2 rounded" type="text" placeholder="Duración de batería">
             <input class="border p-2 rounded" type="number" placeholder="Precio de compra" required>
             <input class="border p-2 rounded" type="number" placeholder="Precio de venta" required>
-            <input class="border p-2 rounded" type="date" placeholder="Fecha de ingreso" required>
+            <input class="border p-2 rounded" type="date" required>
             <select class="border p-2 rounded">
               <option value="">Estado</option>
               <option value="nuevo">Nuevo</option>
@@ -53,6 +65,110 @@
             <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white py-2 rounded">Guardar</button>
           </form>
         `;
+      } else if (tipo === "venta") {
+        contenedor.innerHTML = `
+          <h2 class="text-2xl font-bold mb-4 text-green-700">Venta</h2>
+          <form id="form-venta" class="grid grid-cols-1 gap-4">
+            <input class="border p-2 rounded" type="date" required>
+            <input class="border p-2 rounded" type="text" placeholder="Nombre y Apellido" required>
+            <input class="border p-2 rounded" type="text" placeholder="DNI" required>
+            <input class="border p-2 rounded" type="text" id="imei-buscar" placeholder="IMEI" required>
+
+            <div id="datos-celular" class="bg-gray-100 p-4 rounded hidden">
+              <p><strong>Modelo:</strong> <span id="venta-modelo"></span></p>
+              <p><strong>Color:</strong> <span id="venta-color"></span></p>
+              <p><strong>Precio base:</strong> $<span id="venta-precio"></span></p>
+            </div>
+
+            <label>Bonificación (%):
+              <input class="border p-2 rounded w-full" type="number" id="bonificacion" value="0" min="0" max="100">
+            </label>
+
+            <p class="text-xl font-bold">Precio final: $<span id="precio-final">0</span></p>
+
+            <label>Forma de pago:
+              <select class="border p-2 rounded w-full" id="forma-pago" required>
+                <option value="">Seleccionar</option>
+                <option value="efectivo">Efectivo</option>
+                <option value="transferencia">Transferencia</option>
+                <option value="tarjeta">Tarjeta de crédito</option>
+              </select>
+            </label>
+
+            <label>Moneda:
+              <select class="border p-2 rounded w-full" id="moneda" required>
+                <option value="ARS">Pesos</option>
+                <option value="USD">Dólares</option>
+              </select>
+            </label>
+
+            <button type="submit" class="bg-green-600 hover:bg-green-700 text-white py-2 rounded">Registrar Venta</button>
+          </form>
+        `;
+
+        setTimeout(() => {
+          const imeiInput = document.getElementById('imei-buscar');
+          const bonificacionInput = document.getElementById('bonificacion');
+          const precioSpan = document.getElementById('venta-precio');
+          const modeloSpan = document.getElementById('venta-modelo');
+          const colorSpan = document.getElementById('venta-color');
+          const finalSpan = document.getElementById('precio-final');
+          const datosCelular = document.getElementById('datos-celular');
+
+          let precioBase = 0;
+
+          imeiInput.addEventListener('blur', () => {
+            const imei = imeiInput.value.trim();
+            if (!imei) return;
+
+            db.ref('mercaderia').orderByChild('imei').equalTo(imei).once('value', snapshot => {
+              if (snapshot.exists()) {
+                const data = Object.values(snapshot.val())[0];
+                modeloSpan.textContent = data.modelo;
+                colorSpan.textContent = data.color;
+                precioBase = parseFloat(data.precioVenta);
+                precioSpan.textContent = precioBase.toFixed(2);
+                finalSpan.textContent = precioBase.toFixed(2);
+                datosCelular.classList.remove('hidden');
+              } else {
+                alert('IMEI no encontrado en la base de mercadería');
+                datosCelular.classList.add('hidden');
+              }
+            });
+          });
+
+          bonificacionInput.addEventListener('input', () => {
+            const bonif = parseFloat(bonificacionInput.value) || 0;
+            const final = precioBase - (precioBase * bonif / 100);
+            finalSpan.textContent = final.toFixed(2);
+          });
+        }, 100);
+      } else if (tipo === "gasto") {
+        contenedor.innerHTML = `
+          <h2 class="text-2xl font-bold mb-4 text-red-700">Registrar Gasto</h2>
+          <form id="form-gasto" class="grid grid-cols-1 gap-4">
+            <input class="border p-2 rounded" type="date" required>
+            <input class="border p-2 rounded" type="text" placeholder="Descripción del gasto" required>
+            <input class="border p-2 rounded" type="number" placeholder="Monto" required>
+            <select class="border p-2 rounded" required>
+              <option value="">Categoría</option>
+              <option value="alquiler">Alquiler</option>
+              <option value="servicios">Servicios</option>
+              <option value="insumos">Insumos</option>
+              <option value="otros">Otros</option>
+            </select>
+            <select class="border p-2 rounded" required>
+              <option value="efectivo">Efectivo</option>
+              <option value="transferencia">Transferencia</option>
+              <option value="tarjeta">Tarjeta</option>
+            </select>
+            <select class="border p-2 rounded" required>
+              <option value="ARS">Pesos</option>
+              <option value="USD">Dólares</option>
+            </select>
+            <button type="submit" class="bg-red-600 hover:bg-red-700 text-white py-2 rounded">Guardar Gasto</button>
+          </form>
+        `;
       } else {
         contenedor.innerHTML = `
           <h2 class="text-2xl font-bold mb-4 capitalize text-gray-800">${tipo}</h2>
@@ -60,6 +176,68 @@
         `;
       }
     }
+
+    document.addEventListener('submit', function(e) {
+      if (e.target.id === 'form-mercaderia') {
+        e.preventDefault();
+        const f = e.target;
+        const data = {
+          imei: f[0].value,
+          modelo: f[1].value,
+          color: f[2].value,
+          duracionBateria: f[3].value,
+          precioCompra: parseFloat(f[4].value),
+          precioVenta: parseFloat(f[5].value),
+          fechaIngreso: f[6].value,
+          estado: f[7].value,
+          observaciones: f[8].value,
+          creadoEn: new Date().toISOString()
+        };
+        db.ref('mercaderia').push(data);
+        alert('📦 Mercadería guardada con éxito');
+        f.reset();
+      }
+
+      if (e.target.id === 'form-venta') {
+        e.preventDefault();
+        const f = e.target;
+        const venta = {
+          fecha: f[0].value,
+          cliente: f[1].value,
+          dni: f[2].value,
+          imei: f[3].value,
+          modelo: document.getElementById('venta-modelo').textContent,
+          color: document.getElementById('venta-color').textContent,
+          precioBase: parseFloat(document.getElementById('venta-precio').textContent),
+          bonificacion: parseFloat(document.getElementById('bonificacion').value) || 0,
+          precioFinal: parseFloat(document.getElementById('precio-final').textContent),
+          formaPago: document.getElementById('forma-pago').value,
+          moneda: document.getElementById('moneda').value,
+          creadoEn: new Date().toISOString()
+        };
+        db.ref('ventas').push(venta);
+        alert("✅ Venta registrada con éxito");
+        f.reset();
+        document.getElementById('datos-celular').classList.add('hidden');
+      }
+
+      if (e.target.id === 'form-gasto') {
+        e.preventDefault();
+        const f = e.target;
+        const gasto = {
+          fecha: f[0].value,
+          descripcion: f[1].value,
+          monto: parseFloat(f[2].value),
+          categoria: f[3].value,
+          medioPago: f[4].value,
+          moneda: f[5].value,
+          creadoEn: new Date().toISOString()
+        };
+        db.ref('gastos').push(gasto);
+        alert("💸 Gasto registrado con éxito");
+        f.reset();
+      }
+    });
   </script>
 </body>
 </html>
