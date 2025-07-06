@@ -22,9 +22,10 @@
     <div id="formulario" class="mt-10 hidden"></div>
   </div>
 
-  <!-- Firebase SDK -->
-  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
+  <!-- Firebase App (the core Firebase SDK) -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+  <!-- Firebase Realtime Database -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 
   <script>
     const firebaseConfig = {
@@ -182,8 +183,8 @@
           modelo: f[1].value,
           color: f[2].value,
           duracionBateria: f[3].value,
-          precioCompra: parseFloat(f[4].value),
-          precioVenta: parseFloat(f[5].value),
+          precioCompra: parseFloat(Number(f[4].value).toFixed(2)),
+          precioVenta: parseFloat(Number(f[5].value).toFixed(2)),
           fechaIngreso: f[6].value,
           estado: f[7].value,
           observaciones: f[8].value,
@@ -222,8 +223,8 @@
         const f = e.target;
         const gasto = {
           fecha: f[0].value,
-          montoPesos: parseFloat(f[1].value) || 0,
-          montoUSD: parseFloat(f[2].value) || 0,
+          montoPesos: parseFloat(f[1].value) ? parseFloat(f[1].value).toFixed(2) : "0.00",
+          montoUSD: parseFloat(f[2].value) ? parseFloat(f[2].value).toFixed(2) : "0.00",
           quien: f[3].value,
           descripcion: f[4].value,
           creadoEn: new Date().toISOString()
