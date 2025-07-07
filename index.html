@@ -76,42 +76,49 @@
         contenedor.innerHTML = `
           <h2 class="text-2xl font-bold mb-4 text-green-700">Venta</h2>
           <form id="form-venta" class="grid grid-cols-1 gap-4">
-            <input class="border p-2 rounded" type="date" required>
-            <input class="border p-2 rounded" type="text" placeholder="Nombre y Apellido" required>
-            <input class="border p-2 rounded" type="text" placeholder="DNI" required>
-            <input class="border p-2 rounded" type="text" id="imei-buscar" placeholder="IMEI" required>
+          <input class="border p-2 rounded" type="date" required>
+          <input class="border p-2 rounded" type="text" placeholder="Nombre y Apellido" required>
+          <input class="border p-2 rounded" type="text" placeholder="DNI" required>
+          <input class="border p-2 rounded" type="text" id="imei-buscar" placeholder="IMEI" required>
 
-            <div id="datos-celular" class="bg-gray-100 p-4 rounded hidden">
-              <p><strong>Modelo:</strong> <span id="venta-modelo"></span></p>
-              <p><strong>Color:</strong> <span id="venta-color"></span></p>
-              <p><strong>Precio base en Pesos:</strong> $<span id="venta-precio-ars"></span></p>
-              <p><strong>Precio base en Dólares:</strong> $<span id="venta-precio-usd"></span></p>
-            </div>
+          <div id="datos-celular" class="bg-gray-100 p-4 rounded hidden">
+            <p><strong>Modelo:</strong> <span id="venta-modelo"></span></p>
+            <p><strong>Color:</strong> <span id="venta-color"></span></p>
+            <p><strong>Precio base en ARS:</strong> $<span id="venta-precio-ars"></span></p>
+            <p><strong>Precio base en USD:</strong> $<span id="venta-precio-usd"></span></p>
+          </div>
 
-            <label>Bonificación (%):
-              <input class="border p-2 rounded w-full" type="number" id="bonificacion" value="0" min="0" max="100">
-            </label>
+          <label>Bonificación (%):
+            <input class="border p-2 rounded w-full" type="number" id="bonificacion" value="0" min="0" max="100">
+          </label>
 
-            <p class="text-xl font-bold">Precio final: $<span id="precio-final">0</span></p>
+          <label>Monto pagado en Pesos (ARS):
+            <input class="border p-2 rounded w-full" type="number" id="monto-pesos" min="0" step="0.01" value="0">
+          </label>
 
-            <label>Forma de pago:
-              <select class="border p-2 rounded w-full" id="forma-pago" required>
-                <option value="">Seleccionar</option>
-                <option value="efectivo">Efectivo</option>
-                <option value="transferencia">Transferencia</option>
-                <option value="tarjeta">Tarjeta de crédito</option>
-              </select>
-            </label>
+          <label>Monto pagado en Dólares (USD):
+            <input class="border p-2 rounded w-full" type="number" id="monto-dolares" min="0" step="0.01" value="0">
+          </label>
 
-            <label>Moneda:
-              <select class="border p-2 rounded w-full" id="moneda" required>
-                <option value="ARS">Pesos</option>
-                <option value="USD">Dólares</option>
-              </select>
-            </label>
+          <p class="text-xl font-bold">Total pagado (ARS + USD a cotización): $<span id="precio-final">0.00</span></p>
 
-            <button type="submit" class="bg-green-600 hover:bg-green-700 text-white py-2 rounded">Registrar Venta</button>
-          </form>
+          <label>Forma de pago:
+            <select class="border p-2 rounded w-full" id="forma-pago" required>
+              <option value="">Seleccionar</option>
+              <option value="efectivo">Efectivo</option>
+              <option value="transferencia">Transferencia</option>
+              <option value="tarjeta">Tarjeta de crédito</option>
+            </select>
+          </label>
+
+          <label>
+            Tasa de cambio (USD a ARS):
+            <input type="number" min="0" step="0.01" id="tasa-cambio-venta" value="1245" class="border p-2 rounded w-full" />
+          </label>
+
+          <button type="submit" class="bg-green-600 hover:bg-green-700 text-white py-2 rounded">Registrar Venta</button>
+        </form>
+
         `;
 
         setTimeout(() => {
