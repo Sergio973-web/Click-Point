@@ -163,68 +163,67 @@
           </form>
         `;
       } else if (tipo === "consulta") {
-        contenedor.innerHTML = `
-          <h2 class="text-2xl font-bold mb-4 text-gray-700">Consultas</h2>
-          <label class="block mb-4">
-            <span class="text-gray-700">Seleccionar tipo:</span>
-            <select id="tipo-consulta" class="border p-2 rounded w-full">
-              <option value="mercaderia">Mercadería</option>
-              <option value="ventas">Ventas</option>
-              <option value="gastos">Gastos</option>
-            </select>
+      contenedor.innerHTML = `
+        <h2 class="text-2xl font-bold mb-4 text-gray-700">Consultas</h2>
+        <label class="block mb-4">
+          <span class="text-gray-700">Seleccionar tipo:</span>
+          <select id="tipo-consulta" class="border p-2 rounded w-full">
+            <option value="mercaderia">Mercadería</option>
+            <option value="ventas">Ventas</option>
+            <option value="gastos">Gastos</option>
+          </select>
+        </label>
+        <div id="tabla-consultas" class="overflow-x-auto mt-4"></div>
+      `;
+
+      // ✅ Estas líneas van acá, NO en el balance
+      document.getElementById('tipo-consulta').addEventListener('change', cargarConsulta);
+      cargarConsulta();
+
+    } else if (tipo === "ganancia") {
+      contenedor.innerHTML = `
+        <h2 class="text-2xl font-bold mb-4 text-yellow-700">Ganancia por Mes</h2>
+        <label class="block mb-2 text-sm text-gray-700">Seleccionar Mes y Año:</label>
+        <input type="month" id="mes-ganancia" class="border p-2 rounded mb-2" value="${new Date().toISOString().slice(0,7)}">
+        <button onclick="verGananciasMensuales()" class="bg-yellow-600 hover:bg-yellow-700 text-white py-2 px-4 rounded">Ver Ganancia</button>
+        <div id="resultado-ganancia-mensual" class="mt-4 text-sm text-gray-800"></div>
+      `;
+    } else if (tipo === "balance") {
+      contenedor.innerHTML = `
+        <h2 class="text-2xl font-bold mb-4 text-purple-700">Balance General - Capital Inicial</h2>
+        <form id="form-balance" class="grid grid-cols-1 gap-4">
+          <label>
+            Capital inicial en Pesos (ARS):
+            <input type="number" min="0" step="0.01" class="border p-2 rounded w-full" id="capital-pesos" required>
           </label>
-          <div id="tabla-consultas" class="overflow-x-auto mt-4"></div>
+          <label>
+            Capital inicial en Dólares (USD):
+            <input type="number" min="0" step="0.01" class="border p-2 rounded w-full" id="capital-dolares" required>
+          </label>
+          <label>
+            Tasa de cambio (USD a ARS):
+            <input type="number" min="0" step="0.01" class="border p-2 rounded w-full" id="tasa-cambio" value="350" required>
+          </label>
+          <button type="submit" class="bg-purple-600 hover:bg-purple-700 text-white py-2 rounded">Calcular Balance</button>
+        </form>
+        <div id="resultado-balance" class="mt-4 text-gray-800 text-lg font-semibold"></div>
+      `;
 
-          
-        `;
-      } else if (tipo === "ganancia") {
-        contenedor.innerHTML = `
-          <h2 class="text-2xl font-bold mb-4 text-yellow-700">Ganancia por Mes</h2>
-          <label class="block mb-2 text-sm text-gray-700">Seleccionar Mes y Año:</label>
-          <input type="month" id="mes-ganancia" class="border p-2 rounded mb-2" value="${new Date().toISOString().slice(0,7)}">
-          <button onclick="verGananciasMensuales()" class="bg-yellow-600 hover:bg-yellow-700 text-white py-2 px-4 rounded">Ver Ganancia</button>
-          <div id="resultado-ganancia-mensual" class="mt-4 text-sm text-gray-800"></div>
-        `;
-      } else if (tipo === "balance") {
-        contenedor.innerHTML = `
-          <h2 class="text-2xl font-bold mb-4 text-purple-700">Balance General - Capital Inicial</h2>
-          <form id="form-balance" class="grid grid-cols-1 gap-4">
-            <label>
-              Capital inicial en Pesos (ARS):
-              <input type="number" min="0" step="0.01" class="border p-2 rounded w-full" id="capital-pesos" required>
-            </label>
-            <label>
-              Capital inicial en Dólares (USD):
-              <input type="number" min="0" step="0.01" class="border p-2 rounded w-full" id="capital-dolares" required>
-            </label>
-            <label>
-              Tasa de cambio (USD a ARS):
-              <input type="number" min="0" step="0.01" class="border p-2 rounded w-full" id="tasa-cambio" value="350" required>
-            </label>
-            <button type="submit" class="bg-purple-600 hover:bg-purple-700 text-white py-2 rounded">Calcular Balance</button>
-          </form>
-          <div id="resultado-balance" class="mt-4 text-gray-800 text-lg font-semibold"></div>
-        `;
+      // 👉 Solo el listener del balance
+      setTimeout(() => {
+        const formBalance = document.getElementById('form-balance');
+        formBalance.addEventListener('submit', e => {
+          e.preventDefault();
 
-        // Agregar el listener para el formulario:
-        setTimeout(() => {
-          const formBalance = document.getElementById('form-balance');
-          formBalance.addEventListener('submit', e => {
-            e.preventDefault();
+          const capitalPesos = parseFloat(document.getElementById('capital-pesos').value) || 0;
+          const capitalDolares = parseFloat(document.getElementById('capital-dolares').value) || 0;
+          const tasaCambio = parseFloat(document.getElementById('tasa-cambio').value) || 350;
 
-            const capitalPesos = parseFloat(document.getElementById('capital-pesos').value) || 0;
-            const capitalDolares = parseFloat(document.getElementById('capital-dolares').value) || 0;
-            const tasaCambio = parseFloat(document.getElementById('tasa-cambio').value) || 350;
-
-            calcularBalanceSeparado(capitalPesos, capitalDolares, tasaCambio);
-
-          });
-        }, 100);
-  
-        document.getElementById('tipo-consulta').addEventListener('change', cargarConsulta);
-        cargarConsulta();
-      }
+          calcularBalanceSeparado(capitalPesos, capitalDolares, tasaCambio);
+        });
+      }, 100);
     }
+
 
     // Función para normalizar y parsear número decimal con coma o punto
     function parseDecimal(valor) {
