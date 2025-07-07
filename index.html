@@ -188,55 +188,52 @@
           <div id="resultado-ganancia-mensual" class="mt-4 text-sm text-gray-800"></div>
         `;
       } else if (tipo === "balance") {
-      contenedor.innerHTML = `
-        <h2 class="text-2xl font-bold mb-4 text-purple-700">Balance General - Capital Inicial</h2>
-        <form id="form-balance" class="grid grid-cols-1 gap-4">
-          <label>
-            Capital inicial en Pesos (ARS):
-            <input type="number" min="0" step="0.01" class="border p-2 rounded w-full" id="capital-pesos" required>
-          </label>
-          <label>
-            Capital inicial en Dólares (USD):
-            <input type="number" min="0" step="0.01" class="border p-2 rounded w-full" id="capital-dolares" required>
-          </label>
-          <label>
-            Tasa de cambio (USD a ARS):
-            <input type="number" min="0" step="0.01" class="border p-2 rounded w-full" id="tasa-cambio" value="350" required>
-          </label>
-          <button type="submit" class="bg-purple-600 hover:bg-purple-700 text-white py-2 rounded">Calcular Balance</button>
-        </form>
-        <div id="resultado-balance" class="mt-4 text-gray-800 text-lg font-semibold"></div>
-      `;
+        contenedor.innerHTML = `
+          <h2 class="text-2xl font-bold mb-4 text-purple-700">Balance General - Capital Inicial</h2>
+          <form id="form-balance" class="grid grid-cols-1 gap-4">
+            <label>
+              Capital inicial en Pesos (ARS):
+              <input type="number" min="0" step="0.01" class="border p-2 rounded w-full" id="capital-pesos" required>
+            </label>
+            <label>
+              Capital inicial en Dólares (USD):
+              <input type="number" min="0" step="0.01" class="border p-2 rounded w-full" id="capital-dolares" required>
+            </label>
+            <label>
+              Tasa de cambio (USD a ARS):
+              <input type="number" min="0" step="0.01" class="border p-2 rounded w-full" id="tasa-cambio" value="350" required>
+            </label>
+            <button type="submit" class="bg-purple-600 hover:bg-purple-700 text-white py-2 rounded">Calcular Balance</button>
+          </form>
+          <div id="resultado-balance" class="mt-4 text-gray-800 text-lg font-semibold"></div>
+        `;
 
-      setTimeout(() => {
-        // Cargar capital inicial guardado (si existe)
-        db.ref('capitalInicial').once('value', snapshot => {
-          if (snapshot.exists()) {
-            const data = snapshot.val();
-            document.getElementById('capital-pesos').value = data.capitalPesos || 0;
-            document.getElementById('capital-dolares').value = data.capitalDolares || 0;
-          }
-        });
-
-        // Listener del formulario para calcular balance y guardar capital inicial actualizado
-        const formBalance = document.getElementById('form-balance');
-        formBalance.addEventListener('submit', e => {
-          e.preventDefault();
-
-          const capitalPesos = parseFloat(document.getElementById('capital-pesos').value) || 0;
-          const capitalDolares = parseFloat(document.getElementById('capital-dolares').value) || 0;
-          const tasaCambio = parseFloat(document.getElementById('tasa-cambio').value) || 1245;
-
-          // Guardar capital inicial en Firebase
-          db.ref('capitalInicial').set({
-            capitalPesos: capitalPesos,
-            capitalDolares: capitalDolares
+        setTimeout(() => {
+          db.ref('capitalInicial').once('value', snapshot => {
+            if (snapshot.exists()) {
+              const data = snapshot.val();
+              document.getElementById('capital-pesos').value = data.pesos || 0;
+              document.getElementById('capital-dolares').value = data.dolares || 0;
+            }
           });
 
-          calcularBalanceSeparado(capitalPesos, capitalDolares, tasaCambio);
-        });
-      }, 100);
-    }
+          const formBalance = document.getElementById('form-balance');
+          formBalance.addEventListener('submit', e => {
+            e.preventDefault();
+
+            const capitalPesos = parseFloat(document.getElementById('capital-pesos').value) || 0;
+            const capitalDolares = parseFloat(document.getElementById('capital-dolares').value) || 0;
+            const tasaCambio = parseFloat(document.getElementById('tasa-cambio').value) || 1245;
+
+            db.ref('capitalInicial').set({
+              pesos: capitalPesos,
+              dolares: capitalDolares
+            });
+
+            calcularBalanceSeparado(capitalPesos, capitalDolares, tasaCambio);
+          });
+        }, 100);
+      }
 
     }
 
