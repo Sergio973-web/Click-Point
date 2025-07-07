@@ -181,6 +181,41 @@
           <button onclick="verGananciasMensuales()" class="bg-yellow-600 hover:bg-yellow-700 text-white py-2 px-4 rounded">Ver Ganancia</button>
           <div id="resultado-ganancia-mensual" class="mt-4 text-sm text-gray-800"></div>
         `;
+      } else if (tipo === "balance") {
+        contenedor.innerHTML = `
+          <h2 class="text-2xl font-bold mb-4 text-purple-700">Balance General - Capital Inicial</h2>
+          <form id="form-balance" class="grid grid-cols-1 gap-4">
+            <label>
+              Capital inicial en Pesos (ARS):
+              <input type="number" min="0" step="0.01" class="border p-2 rounded w-full" id="capital-pesos" required>
+            </label>
+            <label>
+              Capital inicial en Dólares (USD):
+              <input type="number" min="0" step="0.01" class="border p-2 rounded w-full" id="capital-dolares" required>
+            </label>
+            <label>
+              Tasa de cambio (USD a ARS):
+              <input type="number" min="0" step="0.01" class="border p-2 rounded w-full" id="tasa-cambio" value="350" required>
+            </label>
+            <button type="submit" class="bg-purple-600 hover:bg-purple-700 text-white py-2 rounded">Calcular Balance</button>
+          </form>
+          <div id="resultado-balance" class="mt-4 text-gray-800 text-lg font-semibold"></div>
+        `;
+
+        // Agregar el listener para el formulario:
+        setTimeout(() => {
+          const formBalance = document.getElementById('form-balance');
+          formBalance.addEventListener('submit', e => {
+            e.preventDefault();
+
+            const capitalPesos = parseFloat(document.getElementById('capital-pesos').value) || 0;
+            const capitalDolares = parseFloat(document.getElementById('capital-dolares').value) || 0;
+            const tasaCambio = parseFloat(document.getElementById('tasa-cambio').value) || 350;
+
+            calcularBalance(capitalPesos, capitalDolares, tasaCambio);
+          });
+        }, 100);
+  
         document.getElementById('tipo-consulta').addEventListener('change', cargarConsulta);
         cargarConsulta();
       }
@@ -408,6 +443,73 @@ function editarItem(tipo, id) {
     });
   });
 }
+
+
+function calcularBalance(capitalPesos, capitalDolares, tasaCambio) {
+  let totalVentasPesos = 0;
+  let totalGastosPesos = 0;
+  let totalCostoCompra = 0;
+
+  // 1. Crear mapa IMEI => precioCompra
+  let mapaCompra = {};
+
+  db.ref('mercaderia').once('value', snapshotMercaderia => {
+    if (snapshotMercaderia.exists()) {
+      snapshotMercaderia.forEach(child => {
+        const item = child.val();
+        if (item.imei) {
+          mapaCompra[item.imei.trim().toUpperCase()] = parseDecimal(item.precioCompra);
+        }
+      });
+    }
+
+    // 2. Cargar ventas
+    db.ref('ventas').once('value', snapshotVentas => {
+      if (snapshotVentas.exists()) {
+        snapshotVentas.forEach(child => {
+          const v = child.val();
+          let precio = parseDecimal(v.precioFinal) || 0;
+
+          // Convertir a pesos si la moneda es USD
+          if (v.moneda && v.moneda.toUpperCase() === 'USD') {
+            precio *= tasaCambio;
+          }
+
+          totalVentasPesos += precio;
+
+          // Costo compra del producto vendido
+          const imeiVenta = (v.imei || "").trim().toUpperCase();
+          if (imeiVenta && mapaCompra[imeiVenta]) {
+            totalCostoCompra += mapaCompra[imeiVenta];
+          } else {
+            console.warn(`No se encontró precioCompra para IMEI: ${imeiVenta}`);
+          }
+        });
+      }
+
+      // 3. Cargar gastos
+      db.ref('gastos').once('value', snapshotGastos => {
+        if (snapshotGastos.exists()) {
+          snapshotGastos.forEach(child => {
+            const g = child.val();
+            const gastoPesos = parseDecimal(g.montoPesos);
+            const gastoUSD = parseDecimal(g.montoUSD);
+            totalGastosPesos += gastoPesos + gastoUSD * tasaCambio;
+          });
+        }
+
+        // Calcular dinero real en caja (capital + ventas - gastos - costo compra)
+        const capitalTotalPesos = capitalPesos + capitalDolares * tasaCambio;
+        const dineroEnCaja = capitalTotalPesos + totalVentasPesos - totalGastosPesos - totalCostoCompra;
+
+        document.getElementById('resultado-balance').textContent =
+          `Dinero real en caja: $${dineroEnCaja.toFixed(2)} ARS
+          (Capital inicial + Ventas - Gastos - Costo de Mercadería)`;
+      });
+    });
+  });
+}
+
 
 document.addEventListener('DOMContentLoaded', () => {
   const titulo = document.querySelector('h1');
