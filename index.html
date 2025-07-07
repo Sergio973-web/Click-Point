@@ -409,6 +409,16 @@ function editarItem(tipo, id) {
   });
 }
 
+document.addEventListener('DOMContentLoaded', () => {
+  const titulo = document.querySelector('h1');
+  if (titulo) {
+    titulo.style.cursor = 'pointer'; // opcional, para que se note que es clickeable
+    titulo.addEventListener('click', () => {
+      location.reload();
+    });
+  }
+});
+
 
 
   </script>
