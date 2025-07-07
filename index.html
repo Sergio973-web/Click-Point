@@ -254,28 +254,43 @@
       }
     });
 
-    function cargarConsulta() {
-      const tipo = document.getElementById("tipo-consulta").value;
-      const tablaContenedor = document.getElementById("tabla-consultas");
-      db.ref(tipo).limitToLast(10).once("value", snapshot => {
-        if (!snapshot.exists()) {
-          tablaContenedor.innerHTML = `<p class="text-gray-600">No hay datos para mostrar.</p>`;
-          return;
-        }
+function cargarConsulta() {
+  const tipo = document.getElementById("tipo-consulta").value;
+  const tablaContenedor = document.getElementById("tabla-consultas");
 
-        const datos = Object.values(snapshot.val());
-        const claves = Object.keys(datos[0]);
-
-        let html = `<table class="min-w-full bg-white border border-gray-300">
-          <thead><tr>${claves.map(c => `<th class="px-4 py-2 border">${c}</th>`).join("")}</tr></thead>
-          <tbody>${datos.map(item => `
-            <tr>${claves.map(clave => `<td class="px-4 py-2 border text-sm">${item[clave] ?? ''}</td>`).join("")}</tr>
-          `).join("")}</tbody>
-        </table>`;
-
-        tablaContenedor.innerHTML = html;
-      });
+  db.ref(tipo).limitToLast(10).once("value", snapshot => {
+    if (!snapshot.exists()) {
+      tablaContenedor.innerHTML = `<p class="text-gray-600">No hay datos para mostrar.</p>`;
+      return;
     }
+
+    const datos = snapshot.val();
+    const entradas = Object.entries(datos);
+    const claves = Object.keys(entradas[0][1]);
+
+    let html = `<table class="min-w-full bg-white border border-gray-300">
+      <thead>
+        <tr>
+          ${claves.map(c => `<th class="px-4 py-2 border">${c}</th>`).join("")}
+          <th class="px-4 py-2 border">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${entradas.map(([key, item]) => `
+          <tr>
+            ${claves.map(clave => `<td class="px-4 py-2 border text-sm">${item[clave] ?? ''}</td>`).join("")}
+            <td class="px-4 py-2 border text-center">
+              <button onclick="editarItem('${tipo}', '${key}')" class="text-blue-600 hover:underline">✏️</button>
+              <button onclick="eliminarItem('${tipo}', '${key}')" class="text-red-600 hover:underline ml-2">🗑️</button>
+            </td>
+          </tr>
+        `).join("")}
+      </tbody>
+    </table>`;
+
+    tablaContenedor.innerHTML = html;
+  });
+}
 
     // NUEVA FUNCIÓN PARA GANANCIAS MENSUALES
 function verGananciasMensuales() {
@@ -344,6 +359,53 @@ function verGananciasMensuales() {
   });
 }
 
+function eliminarItem(tipo, id) {
+  if (confirm("¿Estás seguro que deseas eliminar este registro?")) {
+    db.ref(`${tipo}/${id}`).remove().then(() => {
+      alert("Elemento eliminado");
+      cargarConsulta();
+    });
+  }
+}
+
+function editarItem(tipo, id) {
+  db.ref(`${tipo}/${id}`).once("value", snapshot => {
+    if (!snapshot.exists()) return alert("Elemento no encontrado");
+
+    const datos = snapshot.val();
+    const formulario = document.getElementById("formulario");
+
+    formulario.innerHTML = `
+      <h2 class="text-xl font-bold mb-4 text-blue-800">Editar ${tipo}</h2>
+      <form id="form-edicion" class="grid grid-cols-1 gap-3">
+        ${Object.entries(datos).map(([k, v]) => `
+          <label class="text-sm">
+            ${k}<br>
+            <input name="${k}" class="border p-2 rounded w-full" value="${v ?? ''}" />
+          </label>
+        `).join("")}
+        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white py-2 rounded">Guardar cambios</button>
+      </form>
+    `;
+
+    document.getElementById("form-edicion").addEventListener("submit", function(e) {
+      e.preventDefault();
+      const inputs = Array.from(this.elements).filter(el => el.name);
+      const actualizado = {};
+      inputs.forEach(input => {
+        actualizado[input.name] = input.value;
+      });
+
+      if (actualizado.precioCompra) actualizado.precioCompra = parseDecimal(actualizado.precioCompra);
+      if (actualizado.precioVenta) actualizado.precioVenta = parseDecimal(actualizado.precioVenta);
+
+      db.ref(`${tipo}/${id}`).set(actualizado).then(() => {
+        alert("✅ Datos actualizados");
+        mostrarFormulario("consulta");
+      });
+    });
+  });
+}
 
 
 
