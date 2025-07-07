@@ -289,55 +289,57 @@ async function verGananciasMensuales() {
   const nextMonth = (parseInt(month) + 1).toString().padStart(2, '0');
   const fin = (parseInt(month) === 12) ? (parseInt(year) + 1) + "-01-01" : year + "-" + nextMonth + "-01";
 
-  // Obtener ventas, compras y gastos del mes de Firebase con promesas
   try {
+    // Obtener ventas del mes
     const ventasSnap = await db.ref('ventas').orderByChild('fecha').startAt(inicio).endBefore(fin).once('value');
-    const comprasSnap = await db.ref('mercaderia').orderByChild('fechaIngreso').startAt(inicio).endBefore(fin).once('value');
-    const gastosSnap = await db.ref('gastos').orderByChild('fecha').startAt(inicio).endBefore(fin).once('value');
-
     const ventas = ventasSnap.exists() ? ventasSnap.val() : {};
-    const compras = comprasSnap.exists() ? comprasSnap.val() : {};
+
+    // Obtener TODA la mercadería (sin filtro de fecha)
+    const mercaderiaSnap = await db.ref('mercaderia').once('value');
+    const mercaderia = mercaderiaSnap.exists() ? mercaderiaSnap.val() : {};
+
+    // Obtener gastos del mes
+    const gastosSnap = await db.ref('gastos').orderByChild('fecha').startAt(inicio).endBefore(fin).once('value');
     const gastos = gastosSnap.exists() ? gastosSnap.val() : {};
 
-    // Crear un mapa de IMEI -> precioCompra para buscar rápido precio compra
+    // Crear mapa de IMEI a precioCompra para toda la mercadería
     const mapaCompras = {};
-    Object.values(compras).forEach(c => {
-      if (c.imei) {
-        mapaCompras[c.imei] = parseDecimal(c.precioCompra);
+    Object.values(mercaderia).forEach(item => {
+      if (item.imei) {
+        mapaCompras[item.imei] = parseDecimal(item.precioCompra);
       }
     });
 
-    // Calcular ganancia por venta
+    // Calcular ganancia total por las ventas del mes usando precio de compra histórico
     let gananciaTotal = 0;
     Object.values(ventas).forEach(v => {
       const precioVenta = parseDecimal(v.precioFinal || 0);
       const precioCompra = mapaCompras[v.imei] ?? 0;
-      const ganancia = precioVenta - precioCompra;
-      gananciaTotal += ganancia;
+      gananciaTotal += precioVenta - precioCompra;
     });
 
-    // Sumar todos los gastos del mes (sumar ambos montos en pesos y USD convertidos)
-    let gastosTotalPesos = 0;
-    let gastosTotalUSD = 0;
+    // Calcular gastos totales en pesos y USD
+    let gastosPesos = 0;
+    let gastosUSD = 0;
     Object.values(gastos).forEach(g => {
-      gastosTotalPesos += parseDecimal(g.montoPesos || 0);
-      gastosTotalUSD += parseDecimal(g.montoUSD || 0);
+      gastosPesos += parseDecimal(g.montoPesos || 0);
+      gastosUSD += parseDecimal(g.montoUSD || 0);
     });
 
-    // Convertir USD a pesos (suponé un tipo de cambio fijo, podés obtenerlo dinámicamente si querés)
-    const tipoCambioUSD = 350; // ejemplo, cambiar según corresponda
-    const gastosTotal = gastosTotalPesos + gastosTotalUSD * tipoCambioUSD;
+    const tipoCambioUSD = 350; // ajustar tipo de cambio
+    const gastosTotal = gastosPesos + gastosUSD * tipoCambioUSD;
 
     const gananciaNeta = gananciaTotal - gastosTotal;
 
     document.getElementById('resultado-ganancia-mensual').textContent =
-      `Ganancia neta en ${mesAnio}: $${gananciaNeta.toFixed(2)} (Ganancia: $${gananciaTotal.toFixed(2)} - Gastos: $${gastosTotal.toFixed(2)})`;
+      `Ganancia neta en ${mesAnio}: $${gananciaNeta.toFixed(2)} (Ganancia bruta: $${gananciaTotal.toFixed(2)} - Gastos: $${gastosTotal.toFixed(2)})`;
 
   } catch (error) {
-    console.error("Error al calcular ganancias mensuales:", error);
-    alert("Error al obtener los datos. Intente nuevamente.");
+    console.error("Error calculando ganancias:", error);
+    alert("Error al calcular ganancias. Reintente.");
   }
 }
+
 
 
   </script>
