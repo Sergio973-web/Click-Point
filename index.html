@@ -17,6 +17,8 @@
       <button onclick="mostrarFormulario('venta')" class="bg-green-600 hover:bg-green-700 text-white py-4 rounded-xl text-lg font-semibold">Venta</button>
       <button onclick="mostrarFormulario('gasto')" class="bg-red-600 hover:bg-red-700 text-white py-4 rounded-xl text-lg font-semibold">Gastos</button>
       <button onclick="mostrarFormulario('consulta')" class="bg-gray-700 hover:bg-gray-800 text-white py-4 rounded-xl text-lg font-semibold">Consultas</button>
+      <button onclick="mostrarFormulario('ganancia')" class="bg-yellow-500 hover:bg-yellow-600 text-white py-4 rounded-xl text-lg font-semibold">Ganancias</button>
+
     </div>
 
     <div id="formulario" class="mt-10 hidden"></div>
@@ -169,16 +171,16 @@
           </label>
           <div id="tabla-consultas" class="overflow-x-auto mt-4"></div>
 
-          <!-- SECCIÓN NUEVA PARA GANANCIAS -->
-          <div class="mt-6 p-4 border-t border-gray-300">
-            <h3 class="text-lg font-bold text-gray-800 mb-2">Ganancia por Mes</h3>
-            <label class="block mb-2 text-sm text-gray-700">Seleccionar Mes y Año:</label>
-            <input type="month" id="mes-ganancia" class="border p-2 rounded mb-2" value="${new Date().toISOString().slice(0,7)}">
-            <button onclick="verGananciasMensuales()" class="bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-4 rounded">Ver Ganancia</button>
-            <div id="resultado-ganancia-mensual" class="mt-4 text-sm text-gray-800"></div>
-          </div>
+          
         `;
-
+      } else if (tipo === "ganancia") {
+        contenedor.innerHTML = `
+          <h2 class="text-2xl font-bold mb-4 text-yellow-700">Ganancia por Mes</h2>
+          <label class="block mb-2 text-sm text-gray-700">Seleccionar Mes y Año:</label>
+          <input type="month" id="mes-ganancia" class="border p-2 rounded mb-2" value="${new Date().toISOString().slice(0,7)}">
+          <button onclick="verGananciasMensuales()" class="bg-yellow-600 hover:bg-yellow-700 text-white py-2 px-4 rounded">Ver Ganancia</button>
+          <div id="resultado-ganancia-mensual" class="mt-4 text-sm text-gray-800"></div>
+        `;
         document.getElementById('tipo-consulta').addEventListener('change', cargarConsulta);
         cargarConsulta();
       }
