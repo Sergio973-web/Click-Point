@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Click Point - Gestión Comercial</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
@@ -22,7 +22,7 @@
     <div id="formulario" class="mt-10 hidden"></div>
   </div>
 
-  <!-- Firebase App (the core Firebase SDK) -->
+  <!-- Firebase App (core SDK) -->
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
   <!-- Firebase Realtime Database -->
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
@@ -157,32 +157,32 @@
           </form>
         `;
       } else if (tipo === "consulta") {
-          contenedor.innerHTML = `
-            <h2 class="text-2xl font-bold mb-4 text-gray-700">Consultas</h2>
+        contenedor.innerHTML = `
+          <h2 class="text-2xl font-bold mb-4 text-gray-700">Consultas</h2>
+          <label class="block mb-4">
+            <span class="text-gray-700">Seleccionar tipo:</span>
+            <select id="tipo-consulta" class="border p-2 rounded w-full">
+              <option value="mercaderia">Mercadería</option>
+              <option value="ventas">Ventas</option>
+              <option value="gastos">Gastos</option>
+            </select>
+          </label>
+          <div id="tabla-consultas" class="overflow-x-auto mt-4"></div>
 
-            <label class="block mb-4">
-              <span class="text-gray-700">Seleccionar tipo:</span>
-              <select id="tipo-consulta" class="border p-2 rounded w-full">
-                <option value="mercaderia">Mercadería</option>
-                <option value="ventas">Ventas</option>
-                <option value="gastos">Gastos</option>
-              </select>
-            </label>
+          <!-- SECCIÓN NUEVA PARA GANANCIAS -->
+          <div class="mt-6 p-4 border-t border-gray-300">
+            <h3 class="text-lg font-bold text-gray-800 mb-2">Ganancia por Mes</h3>
+            <label class="block mb-2 text-sm text-gray-700">Seleccionar Mes y Año:</label>
+            <input type="month" id="mes-ganancia" class="border p-2 rounded mb-2" value="${new Date().toISOString().slice(0,7)}">
+            <button onclick="verGananciasMensuales()" class="bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-4 rounded">Ver Ganancia</button>
+            <div id="resultado-ganancia-mensual" class="mt-4 text-sm text-gray-800"></div>
+          </div>
+        `;
 
-            <div id="tabla-consultas" class="overflow-x-auto mt-4"></div>
-
-            <div class="mt-6 p-4 border-t border-gray-300">
-              <h3 class="text-lg font-bold text-gray-800 mb-2">Ganancia por Mes</h3>
-              <label class="block mb-2 text-sm text-gray-700">Seleccionar Mes y Año:</label>
-              <input type="month" id="mes-ganancia" class="border p-2 rounded mb-2" value="${new Date().toISOString().slice(0,7)}">
-              <button onclick="verGananciasMensuales()" class="bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-4 rounded">Ver Ganancia</button>
-              <div id="resultado-ganancia-mensual" class="mt-4 text-sm text-gray-800"></div>
-            </div>
-          `;
-          document.getElementById('tipo-consulta').addEventListener('change', cargarConsulta);
-          cargarConsulta();
-        }
-
+        document.getElementById('tipo-consulta').addEventListener('change', cargarConsulta);
+        cargarConsulta();
+      }
+    }
 
     // Función para normalizar y parsear número decimal con coma o punto
     function parseDecimal(valor) {
@@ -276,79 +276,44 @@
       });
     }
 
-    async function verGananciasMensuales() {
-      const mesSeleccionado = document.getElementById("mes-ganancia").value;
-      const resultado = document.getElementById("resultado-ganancia-mensual");
-
-      if (!mesSeleccionado) {
-        resultado.innerHTML = "<p class='text-red-600'>⚠️ Por favor seleccioná un mes.</p>";
+    // NUEVA FUNCIÓN PARA GANANCIAS MENSUALES
+    function verGananciasMensuales() {
+      const mesAnio = document.getElementById('mes-ganancia').value; // Formato "YYYY-MM"
+      if (!mesAnio) {
+        alert("Selecciona un mes y año válidos.");
         return;
       }
+      const inicio = mesAnio + "-01";
+      // Para fin de mes sumamos 1 mes y restamos 1 día (simple para filtro)
+      const [year, month] = mesAnio.split("-");
+      const nextMonth = (parseInt(month) + 1).toString().padStart(2, '0');
+      const fin = (parseInt(month) === 12) ? (parseInt(year) + 1) + "-01-01" : year + "-" + nextMonth + "-01";
 
-      resultado.innerHTML = "<p class='text-gray-500'>🔄 Calculando ganancias...</p>";
+      let totalVentas = 0;
+      let totalCompras = 0;
 
-      const [ventasSnap, mercaderiaSnap, gastosSnap] = await Promise.all([
-        db.ref("ventas").once("value"),
-        db.ref("mercaderia").once("value"),
-        db.ref("gastos").once("value")
-      ]);
-
-      const ventas = Object.values(ventasSnap.val() || {}).filter(v => v.fecha?.startsWith(mesSeleccionado));
-      const mercaderia = mercaderiaSnap.val() || {};
-      const gastos = Object.values(gastosSnap.val() || {}).filter(g => g.fecha?.startsWith(mesSeleccionado));
-
-      const resumen = {};
-      let totalGanancia = 0;
-
-      for (let venta of ventas) {
-        const celular = Object.values(mercaderia).find(m => m.imei === venta.imei);
-        const costo = parseDecimal(celular?.precioCompra);
-        const precioFinal = parseDecimal(venta.precioFinal);
-        const ganancia = precioFinal - costo;
-
-        const clave = `${venta.formaPago}-${venta.moneda}`;
-        if (!resumen[clave]) resumen[clave] = { ventas: 0, costos: 0, ganancia: 0 };
-
-        resumen[clave].ventas += precioFinal;
-        resumen[clave].costos += costo;
-        resumen[clave].ganancia += ganancia;
-        totalGanancia += ganancia;
-      }
-
-      let gastosARS = 0, gastosUSD = 0;
-      for (let g of gastos) {
-        gastosARS += parseDecimal(g.montoPesos);
-        gastosUSD += parseDecimal(g.montoUSD);
-      }
-
-      let html = `<table class='min-w-full bg-white border border-gray-300 mb-4'>
-        <thead><tr class="bg-gray-100">
-          <th class='px-2 py-1 border'>Forma de Pago</th>
-          <th class='px-2 py-1 border'>Moneda</th>
-          <th class='px-2 py-1 border'>Ventas</th>
-          <th class='px-2 py-1 border'>Costo</th>
-          <th class='px-2 py-1 border'>Ganancia</th>
-        </tr></thead><tbody>`;
-
-      for (let clave in resumen) {
-        const [forma, moneda] = clave.split("-");
-        const r = resumen[clave];
-        html += `<tr>
-          <td class='px-2 py-1 border'>${forma}</td>
-          <td class='px-2 py-1 border'>${moneda}</td>
-          <td class='px-2 py-1 border'>$${r.ventas.toFixed(2)}</td>
-          <td class='px-2 py-1 border'>$${r.costos.toFixed(2)}</td>
-          <td class='px-2 py-1 border font-semibold'>$${r.ganancia.toFixed(2)}</td>
-        </tr>`;
-      }
-
-      html += `</tbody></table>`;
-      html += `<p class='text-sm font-semibold text-red-600 mt-2'>Gastos: ARS $${gastosARS.toFixed(2)} | USD $${gastosUSD.toFixed(2)}</p>`;
-      html += `<p class='text-sm font-bold text-green-700'>Ganancia neta: ARS $${(totalGanancia - gastosARS).toFixed(2)}</p>`;
-
-      resultado.innerHTML = html;
+      // Obtener ventas del mes
+      db.ref('ventas').orderByChild('fecha').startAt(inicio).endBefore(fin).once('value', snapshotVentas => {
+        if (snapshotVentas.exists()) {
+          snapshotVentas.forEach(child => {
+            const v = child.val();
+            totalVentas += parseDecimal(v.precioFinal || 0);
+          });
+        }
+        // Obtener compras del mes
+        db.ref('mercaderia').orderByChild('fechaIngreso').startAt(inicio).endBefore(fin).once('value', snapshotCompras => {
+          if (snapshotCompras.exists()) {
+            snapshotCompras.forEach(child => {
+              const c = child.val();
+              totalCompras += parseDecimal(c.precioCompra || 0);
+            });
+          }
+          const ganancia = totalVentas - totalCompras;
+          document.getElementById('resultado-ganancia-mensual').textContent = 
+            `Ganancia neta en ${mesAnio}: $${ganancia.toFixed(2)}`;
+        });
+      });
     }
-
   </script>
 </body>
 </html>
