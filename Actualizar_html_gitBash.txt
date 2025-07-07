@@ -1,4 +1,6 @@
-
+Desde esta carpeta dar click derecho y seleccionar
+Open Git Bash here
+y luego copiar lo de abajo
 
 git add .
 git commit -m "Agregué nuevas funciones y estilos"

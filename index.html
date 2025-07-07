@@ -84,7 +84,8 @@
             <div id="datos-celular" class="bg-gray-100 p-4 rounded hidden">
               <p><strong>Modelo:</strong> <span id="venta-modelo"></span></p>
               <p><strong>Color:</strong> <span id="venta-color"></span></p>
-              <p><strong>Precio base:</strong> $<span id="venta-precio"></span></p>
+              <p><strong>Precio base en Pesos:</strong> $<span id="venta-precio-ars"></span></p>
+              <p><strong>Precio base en Dólares:</strong> $<span id="venta-precio-usd"></span></p>
             </div>
 
             <label>Bonificación (%):
@@ -123,6 +124,7 @@
           const datosCelular = document.getElementById('datos-celular');
 
           let precioBase = 0;
+          let precioBaseUSD = 0;
 
           imeiInput.addEventListener('blur', () => {
             const imei = imeiInput.value.trim();
@@ -133,22 +135,41 @@
                 const data = Object.values(snapshot.val())[0];
                 modeloSpan.textContent = data.modelo;
                 colorSpan.textContent = data.color;
-                precioBase = parseFloat(data.precioVenta);
-                precioSpan.textContent = precioBase.toFixed(2);
-                finalSpan.textContent = precioBase.toFixed(2);
+                precioBaseARS = parseFloat(data.precioVenta) || 0;
+                precioBaseUSD = parseFloat(data.precioVentaUSD) || 0;
+                precioSpanARS.textContent = precioBaseARS.toFixed(2);
+                precioSpanUSD.textContent = precioBaseUSD.toFixed(2);
+                finalSpan.textContent = precioBaseARS.toFixed(2);
                 datosCelular.classList.remove('hidden');
               } else {
                 alert('IMEI no encontrado en la base de mercadería');
                 datosCelular.classList.add('hidden');
               }
             });
+
           });
 
           bonificacionInput.addEventListener('input', () => {
             const bonif = parseFloat(bonificacionInput.value) || 0;
+            let precioBase = 0;
+            const moneda = document.getElementById('moneda').value;
+            if (moneda === 'USD') {
+              precioBase = precioBaseUSD;
+            } else {
+              precioBase = precioBaseARS;
+            }
             const final = precioBase - (precioBase * bonif / 100);
             finalSpan.textContent = final.toFixed(2);
           });
+          // Aquí agregás el event listener para el cambio de moneda:
+          document.getElementById('moneda').addEventListener('change', () => {
+            const moneda = document.getElementById('moneda').value;
+            const bonif = parseFloat(bonificacionInput.value) || 0;
+            let precioBase = moneda === 'USD' ? precioBaseUSD : precioBaseARS;
+            const final = precioBase - (precioBase * bonif / 100);
+            finalSpan.textContent = final.toFixed(2);
+          });
+
         }, 100);
       } else if (tipo === "gasto") {
         contenedor.innerHTML = `
@@ -277,13 +298,15 @@
           imei: f[3].value,
           modelo: document.getElementById('venta-modelo').textContent,
           color: document.getElementById('venta-color').textContent,
-          precioBase: parseDecimal(document.getElementById('venta-precio').textContent),
+          precioBaseARS: precioBaseARS,
+          precioBaseUSD: precioBaseUSD,
           bonificacion: parseDecimal(document.getElementById('bonificacion').value),
           precioFinal: parseDecimal(document.getElementById('precio-final').textContent),
           formaPago: document.getElementById('forma-pago').value,
           moneda: document.getElementById('moneda').value,
           creadoEn: new Date().toISOString()
         };
+
         db.ref('ventas').push(venta);
         alert("✅ Venta registrada con éxito");
         f.reset();
