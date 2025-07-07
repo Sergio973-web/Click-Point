@@ -186,11 +186,12 @@
 
     // Función para normalizar y parsear número decimal con coma o punto
     function parseDecimal(valor) {
-      if (!valor) return 0;
-      valor = valor.trim().replace(',', '.');
+      if (valor == null) return 0;
+      valor = String(valor).trim().replace(',', '.');
       let num = parseFloat(valor);
       return isNaN(num) ? 0 : +num.toFixed(2);
     }
+
 
     document.addEventListener('submit', function(e) {
       if (e.target.id === 'form-mercaderia') {
