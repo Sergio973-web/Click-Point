@@ -278,8 +278,8 @@
     }
 
     // NUEVA FUNCIÓN PARA GANANCIAS MENSUALES
-async function verGananciasMensuales() {
-  const mesAnio = document.getElementById('mes-ganancia').value; // "YYYY-MM"
+function verGananciasMensuales() {
+  const mesAnio = document.getElementById('mes-ganancia').value; // formato "YYYY-MM"
   if (!mesAnio) {
     alert("Selecciona un mes y año válidos.");
     return;
@@ -289,56 +289,61 @@ async function verGananciasMensuales() {
   const nextMonth = (parseInt(month) + 1).toString().padStart(2, '0');
   const fin = (parseInt(month) === 12) ? (parseInt(year) + 1) + "-01-01" : year + "-" + nextMonth + "-01";
 
-  try {
-    // Obtener ventas del mes
-    const ventasSnap = await db.ref('ventas').orderByChild('fecha').startAt(inicio).endBefore(fin).once('value');
-    const ventas = ventasSnap.exists() ? ventasSnap.val() : {};
+  let mapaCompras = {};
+  let gananciaBruta = 0;
+  let gastosMes = 0;
 
-    // Obtener TODA la mercadería (sin filtro de fecha)
-    const mercaderiaSnap = await db.ref('mercaderia').once('value');
-    const mercaderia = mercaderiaSnap.exists() ? mercaderiaSnap.val() : {};
+  // Primero cargamos mercaderia para crear mapa IMEI -> precioCompra
+  db.ref('mercaderia').once('value', snapshotMercaderia => {
+    if (snapshotMercaderia.exists()) {
+      snapshotMercaderia.forEach(child => {
+        const item = child.val();
+        if (item.imei) {
+          mapaCompras[item.imei.trim().toUpperCase()] = parseDecimal(item.precioCompra);
+        }
+      });
+    }
 
-    // Obtener gastos del mes
-    const gastosSnap = await db.ref('gastos').orderByChild('fecha').startAt(inicio).endBefore(fin).once('value');
-    const gastos = gastosSnap.exists() ? gastosSnap.val() : {};
+    // Luego cargamos ventas del mes
+    db.ref('ventas').orderByChild('fecha').startAt(inicio).endBefore(fin).once('value', snapshotVentas => {
+      if (snapshotVentas.exists()) {
+        snapshotVentas.forEach(child => {
+          const v = child.val();
+          const imeiVenta = (v.imei || "").trim().toUpperCase();
+          const precioVenta = parseDecimal(v.precioFinal || 0);
 
-    // Crear mapa de IMEI a precioCompra para toda la mercadería
-    const mapaCompras = {};
-    Object.values(mercaderia).forEach(item => {
-      if (item.imei) {
-        mapaCompras[item.imei] = parseDecimal(item.precioCompra);
+          if (!imeiVenta) {
+            console.warn("Venta sin IMEI:", v);
+            return;
+          }
+          if (!(imeiVenta in mapaCompras)) {
+            console.warn(`No se encontró precio de compra para IMEI: ${imeiVenta}`);
+            // Opcional: podrías descontar el precioVenta como pérdida, o ignorar esta venta
+            return;
+          }
+
+          const precioCompra = mapaCompras[imeiVenta];
+          gananciaBruta += precioVenta - precioCompra;
+        });
       }
+
+      // Finalmente, cargamos gastos del mes
+      db.ref('gastos').orderByChild('fecha').startAt(inicio).endBefore(fin).once('value', snapshotGastos => {
+        if (snapshotGastos.exists()) {
+          snapshotGastos.forEach(child => {
+            const g = child.val();
+            gastosMes += parseDecimal(g.montoPesos) + parseDecimal(g.montoUSD) * 350; // Ejemplo: convertir USD a pesos (ajustar tasa)
+          });
+        }
+
+        const gananciaNeta = gananciaBruta - gastosMes;
+        document.getElementById('resultado-ganancia-mensual').textContent = 
+          `Ganancia neta en ${mesAnio}: $${gananciaNeta.toFixed(2)} (Ganancia bruta: $${gananciaBruta.toFixed(2)} - Gastos: $${gastosMes.toFixed(2)})`;
+      });
     });
-
-    // Calcular ganancia total por las ventas del mes usando precio de compra histórico
-    let gananciaTotal = 0;
-    Object.values(ventas).forEach(v => {
-      const precioVenta = parseDecimal(v.precioFinal || 0);
-      const precioCompra = mapaCompras[v.imei] ?? 0;
-      gananciaTotal += precioVenta - precioCompra;
-    });
-
-    // Calcular gastos totales en pesos y USD
-    let gastosPesos = 0;
-    let gastosUSD = 0;
-    Object.values(gastos).forEach(g => {
-      gastosPesos += parseDecimal(g.montoPesos || 0);
-      gastosUSD += parseDecimal(g.montoUSD || 0);
-    });
-
-    const tipoCambioUSD = 350; // ajustar tipo de cambio
-    const gastosTotal = gastosPesos + gastosUSD * tipoCambioUSD;
-
-    const gananciaNeta = gananciaTotal - gastosTotal;
-
-    document.getElementById('resultado-ganancia-mensual').textContent =
-      `Ganancia neta en ${mesAnio}: $${gananciaNeta.toFixed(2)} (Ganancia bruta: $${gananciaTotal.toFixed(2)} - Gastos: $${gastosTotal.toFixed(2)})`;
-
-  } catch (error) {
-    console.error("Error calculando ganancias:", error);
-    alert("Error al calcular ganancias. Reintente.");
-  }
+  });
 }
+
 
 
 
