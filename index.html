@@ -216,7 +216,8 @@
             const capitalDolares = parseFloat(document.getElementById('capital-dolares').value) || 0;
             const tasaCambio = parseFloat(document.getElementById('tasa-cambio').value) || 350;
 
-            calcularBalance(capitalPesos, capitalDolares, tasaCambio);
+            calcularBalanceSeparado(capitalPesos, capitalDolares, tasaCambio);
+
           });
         }, 100);
   
@@ -449,12 +450,13 @@ function editarItem(tipo, id) {
 }
 
 
-function calcularBalance(capitalPesos, capitalDolares, tasaCambio) {
-  let totalVentasPesos = 0;
-  let totalGastosPesos = 0;
+function calcularBalanceSeparado(capitalPesos, capitalDolares, tasaCambio) {
+  let ventasPesos = 0;
+  let ventasDolares = 0;
+  let gastosPesos = 0;
+  let gastosDolares = 0;
   let totalCostoCompra = 0;
 
-  // 1. Crear mapa IMEI => precioCompra
   let mapaCompra = {};
 
   db.ref('mercaderia').once('value', snapshotMercaderia => {
@@ -467,22 +469,20 @@ function calcularBalance(capitalPesos, capitalDolares, tasaCambio) {
       });
     }
 
-    // 2. Cargar ventas
     db.ref('ventas').once('value', snapshotVentas => {
       if (snapshotVentas.exists()) {
         snapshotVentas.forEach(child => {
           const v = child.val();
-          let precio = parseDecimal(v.precioFinal) || 0;
+          const imeiVenta = (v.imei || "").trim().toUpperCase();
+          const precioFinal = parseDecimal(v.precioFinal) || 0;
+          const moneda = (v.moneda || "ARS").toUpperCase();
 
-          // Convertir a pesos si la moneda es USD
-          if (v.moneda && v.moneda.toUpperCase() === 'USD') {
-            precio *= tasaCambio;
+          if (moneda === 'USD') {
+            ventasDolares += precioFinal;
+          } else {
+            ventasPesos += precioFinal;
           }
 
-          totalVentasPesos += precio;
-
-          // Costo compra del producto vendido
-          const imeiVenta = (v.imei || "").trim().toUpperCase();
           if (imeiVenta && mapaCompra[imeiVenta]) {
             totalCostoCompra += mapaCompra[imeiVenta];
           } else {
@@ -491,24 +491,31 @@ function calcularBalance(capitalPesos, capitalDolares, tasaCambio) {
         });
       }
 
-      // 3. Cargar gastos
       db.ref('gastos').once('value', snapshotGastos => {
         if (snapshotGastos.exists()) {
           snapshotGastos.forEach(child => {
             const g = child.val();
-            const gastoPesos = parseDecimal(g.montoPesos);
-            const gastoUSD = parseDecimal(g.montoUSD);
-            totalGastosPesos += gastoPesos + gastoUSD * tasaCambio;
+            gastosPesos += parseDecimal(g.montoPesos);
+            gastosDolares += parseDecimal(g.montoUSD);
           });
         }
 
-        // Calcular dinero real en caja (capital + ventas - gastos - costo compra)
-        const capitalTotalPesos = capitalPesos + capitalDolares * tasaCambio;
-        const dineroEnCaja = capitalTotalPesos + totalVentasPesos - totalGastosPesos - totalCostoCompra;
+        const capitalNetoPesos = capitalPesos + ventasPesos - gastosPesos - totalCostoCompra;
+        const capitalNetoDolares = capitalDolares + ventasDolares - gastosDolares;
 
-        document.getElementById('resultado-balance').textContent =
-          `Dinero real en caja: $${dineroEnCaja.toFixed(2)} ARS
-          (Capital inicial + Ventas - Gastos - Costo de Mercadería)`;
+        const totalEnPesos = capitalNetoPesos + capitalNetoDolares * tasaCambio;
+
+        const resultado = `
+          <p>Dinero real en caja:</p>
+          <ul>
+            <li><strong>PESOS:</strong> $${capitalNetoPesos.toFixed(2)} ARS</li>
+            <li><strong>DÓLARES:</strong> $${capitalNetoDolares.toFixed(2)} USD</li>
+            <li><strong>Total aproximado en pesos:</strong> $${totalEnPesos.toFixed(2)} ARS (usando tasa $${tasaCambio})</li>
+          </ul>
+          <p>(Capital inicial + Ventas - Gastos - Costo de Mercadería)</p>
+        `;
+
+        document.getElementById('resultado-balance').innerHTML = resultado;
       });
     });
   });
