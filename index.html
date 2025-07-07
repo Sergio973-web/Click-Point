@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Click Point - Gestión Comercial</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+
 </head>
 <body class="bg-gray-100 min-h-screen flex items-center justify-center">
 
@@ -80,6 +82,11 @@
           <input class="border p-2 rounded" type="text" placeholder="Nombre y Apellido" required>
           <input class="border p-2 rounded" type="text" placeholder="DNI" required>
           <input class="border p-2 rounded" type="text" id="imei-buscar" placeholder="IMEI" required>
+          <button type="button" onclick="iniciarEscaneo()" class="bg-gray-300 hover:bg-gray-400 text-black py-1 px-3 rounded w-fit">📷 Escanear IMEI</button>
+          <div id="scanner-container" class="mt-2 hidden">
+            <div id="reader" style="width:100%; max-width:300px;"></div>
+            <button type="button" onclick="detenerEscaneo()" class="mt-2 bg-red-600 hover:bg-red-700 text-white py-1 px-3 rounded">🛑 Detener</button>
+          </div>
 
           <div id="datos-celular" class="bg-gray-100 p-4 rounded hidden">
             <p><strong>Modelo:</strong> <span id="venta-modelo"></span></p>
@@ -567,6 +574,42 @@ function calcularBalanceSeparado(capitalPesos, capitalDolares, tasaCambio) {
     });
   });
 }
+
+
+let scanner = null;
+
+function iniciarEscaneo() {
+  document.getElementById('scanner-container').classList.remove('hidden');
+  scanner = new Html5Qrcode("reader");
+  const config = { fps: 10, qrbox: 250 };
+
+  scanner.start(
+    { facingMode: "environment" }, // Usa cámara trasera si está disponible
+    config,
+    (decodedText) => {
+      document.getElementById("imei-buscar").value = decodedText;
+      detenerEscaneo(); // Detiene automáticamente al detectar
+    },
+    (errorMessage) => {
+      // Podés loguear errores si querés
+    }
+  ).catch(err => {
+    console.error("Error al iniciar el escáner:", err);
+    alert("No se pudo acceder a la cámara");
+  });
+}
+
+function detenerEscaneo() {
+  if (scanner) {
+    scanner.stop().then(() => {
+      document.getElementById("reader").innerHTML = "";
+      document.getElementById('scanner-container').classList.add('hidden');
+    }).catch(err => {
+      console.error("Error al detener escaneo:", err);
+    });
+  }
+}
+
 
 
 document.addEventListener('DOMContentLoaded', () => {
