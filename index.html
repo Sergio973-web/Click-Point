@@ -220,6 +220,10 @@ function mostrarFormulario(tipo) {
         <input class="border p-2 rounded w-full" type="number" id="monto-dolares" min="0" step="0.01" value="0">
       </label>
 
+      <label>Observaciones:
+        <textarea id="observaciones" class="border p-2 rounded w-full" rows="3" placeholder="Opcional..."></textarea>
+      </label>
+
       <p class="text-xl font-bold">Precio final: $<span id="precio-final">0.00</span></p>
 
       <button type="submit" class="bg-green-600 hover:bg-green-700 text-white py-2 rounded">Registrar Venta</button>
@@ -247,11 +251,11 @@ function mostrarFormulario(tipo) {
           const data = Object.values(snapshot.val())[0];
           modeloSpan.textContent = data.modelo;
           colorSpan.textContent = data.color;
-          precioBaseARS = parseFloat(data.precioVenta) || 0; // Aquí asignas precioBaseARS correctamente
+          precioBaseARS = parseFloat(data.precioVenta) || 0;
           precioBaseUSD = parseFloat(data.precioVentaUSD) || 0;
           precioSpanARS.textContent = precioBaseARS.toFixed(2);
           precioSpanUSD.textContent = precioBaseUSD.toFixed(2);
-          finalSpan.textContent = precioBaseARS.toFixed(2); // Actualiza el precio final con precioBaseARS
+          finalSpan.textContent = precioBaseARS.toFixed(2);
           datosCelular.classList.remove('hidden');
         } else {
           alert('IMEI no encontrado en la base de mercadería');
@@ -276,7 +280,6 @@ function mostrarFormulario(tipo) {
       finalSpan.textContent = final.toFixed(2);
     });
 
-    // Aquí se agrega el submit para guardar en Firebase
     const form = document.getElementById('form-venta');
     form.addEventListener('submit', function (e) {
       e.preventDefault();
@@ -290,6 +293,7 @@ function mostrarFormulario(tipo) {
       const bonificacion = parseFloat(document.getElementById('bonificacion').value) || 0;
       const montoPesos = parseFloat(document.getElementById('monto-pesos').value) || 0;
       const montoDolares = parseFloat(document.getElementById('monto-dolares').value) || 0;
+      const observaciones = document.getElementById("observaciones").value.trim();
 
       const venta = {
         fecha: form[0].value,
@@ -298,12 +302,12 @@ function mostrarFormulario(tipo) {
         imei,
         modelo: document.getElementById('venta-modelo').textContent,
         color: document.getElementById('venta-color').textContent,
-        
         bonificacion,
         moneda,
         formaPago,
         montoPesos,
         montoDolares,
+        observaciones,
         creadoEn: new Date().toISOString()
       };
 
