@@ -208,6 +208,7 @@ function mostrarFormulario(tipo) {
         <select id="moneda" class="border p-2 rounded w-full">
           <option value="ARS">Pesos</option>
           <option value="USD">Dólares</option>
+          <option value="AMBOS">Pesos y Dólares</option>
         </select>
       </label>
 
@@ -300,7 +301,7 @@ function mostrarFormulario(tipo) {
           bonificacion,
           moneda,
           formaPago,
-          tasaCambio,
+          
           montoPesos,
           montoDolares,
           creadoEn: new Date().toISOString()
