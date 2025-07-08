@@ -176,155 +176,149 @@ function mostrarFormulario(tipo) {
     });
   }, 100);
 } else if (tipo === "venta") {
-    contenedor.innerHTML = `
-      <h2 class="text-2xl font-bold mb-4 text-green-700">Venta</h2>
-      <form id="form-venta" class="grid grid-cols-1 gap-4">
-        <input class="border p-2 rounded" type="date" required>
-        <input class="border p-2 rounded" type="text" placeholder="Nombre y Apellido" required>
-        <input class="border p-2 rounded" type="text" placeholder="DNI" required>
-        <input class="border p-2 rounded" type="text" id="imei-buscar" placeholder="IMEI" required>
+  contenedor.innerHTML = `
+    <h2 class="text-2xl font-bold mb-4 text-green-700">Venta</h2>
+    <form id="form-venta" class="grid grid-cols-1 gap-4">
+      <input class="border p-2 rounded" type="date" required>
+      <input class="border p-2 rounded" type="text" placeholder="Nombre y Apellido" required>
+      <input class="border p-2 rounded" type="text" placeholder="DNI" required>
+      <input class="border p-2 rounded" type="text" id="imei-buscar" placeholder="IMEI" required>
 
-        <div id="datos-celular" class="bg-gray-100 p-4 rounded hidden">
-          <p><strong>Modelo:</strong> <span id="venta-modelo"></span></p>
-          <p><strong>Color:</strong> <span id="venta-color"></span></p>
-          <p><strong>Precio base en ARS:</strong> $<span id="venta-precio-ars"></span></p>
-          <p><strong>Precio base en USD:</strong> $<span id="venta-precio-usd"></span></p>
-        </div>
+      <div id="datos-celular" class="bg-gray-100 p-4 rounded hidden">
+        <p><strong>Modelo:</strong> <span id="venta-modelo"></span></p>
+        <p><strong>Color:</strong> <span id="venta-color"></span></p>
+        <p><strong>Precio base en ARS:</strong> $<span id="venta-precio-ars"></span></p>
+        <p><strong>Precio base en USD:</strong> $<span id="venta-precio-usd"></span></p>
+      </div>
 
-        <label>Bonificación (%):
-          <input class="border p-2 rounded w-full" type="number" id="bonificacion" value="0" min="0" max="100">
-        </label>
+      <label>Bonificación (%):
+        <input class="border p-2 rounded w-full" type="number" id="bonificacion" value="0" min="0" max="100">
+      </label>
 
-        <label>Monto pagado en Pesos (ARS):
-          <input class="border p-2 rounded w-full" type="number" id="monto-pesos" min="0" step="0.01" value="0">
-        </label>
+      <label>Monto pagado en Pesos (ARS):
+        <input class="border p-2 rounded w-full" type="number" id="monto-pesos" min="0" step="0.01" value="0">
+      </label>
 
-        <label>Monto pagado en Dólares (USD):
-          <input class="border p-2 rounded w-full" type="number" id="monto-dolares" min="0" step="0.01" value="0">
-        </label>
+      <label>Monto pagado en Dólares (USD):
+        <input class="border p-2 rounded w-full" type="number" id="monto-dolares" min="0" step="0.01" value="0">
+      </label>
 
-        <p class="text-xl font-bold">Precio final: $<span id="precio-final">0.00</span></p>
+      <p class="text-xl font-bold">Precio final: $<span id="precio-final">0.00</span></p>
 
-        <label>Forma de pago:
-          <select class="border p-2 rounded w-full" id="forma-pago" required>
-            <option value="">Seleccionar</option>
-            <option value="efectivo">Efectivo</option>
-            <option value="transferencia">Transferencia</option>
-            <option value="tarjeta">Tarjeta de crédito</option>
-          </select>
-        </label>
+      <label>Forma de pago:
+        <select class="border p-2 rounded w-full" id="forma-pago" required>
+          <option value="">Seleccionar</option>
+          <option value="efectivo">Efectivo</option>
+          <option value="transferencia">Transferencia</option>
+          <option value="tarjeta">Tarjeta de crédito</option>
+        </select>
+      </label>
 
-        <label>Moneda:
-          <select id="moneda" class="border p-2 rounded w-full">
-            <option value="ARS">Pesos</option>
-            <option value="USD">Dólares</option>
-          </select>
-        </label>
+      <label>Moneda:
+        <select id="moneda" class="border p-2 rounded w-full">
+          <option value="ARS">Pesos</option>
+          <option value="USD">Dólares</option>
+        </select>
+      </label>
 
-        <label>
-          Tasa de cambio (USD a ARS):
-          <input type="number" min="0" step="0.01" id="tasa-cambio-venta" class="border p-2 rounded w-full" />
-        </label>
+      <label>
+        Tasa de cambio (USD a ARS):
+        <input type="number" min="0" step="0.01" id="tasa-cambio-venta" class="border p-2 rounded w-full" />
+      </label>
 
-        <button type="submit" class="bg-green-600 hover:bg-green-700 text-white py-2 rounded">Registrar Venta</button>
-      </form>
-    `;
+      <button type="submit" class="bg-green-600 hover:bg-green-700 text-white py-2 rounded">Registrar Venta</button>
+    </form>
+  `;
 
-    setTimeout(() => {
-      const imeiInput = document.getElementById('imei-buscar');
-      const bonificacionInput = document.getElementById('bonificacion');
-      const modeloSpan = document.getElementById('venta-modelo');
-      const colorSpan = document.getElementById('venta-color');
-      const precioSpanARS = document.getElementById('venta-precio-ars');
-      const precioSpanUSD = document.getElementById('venta-precio-usd');
-      const finalSpan = document.getElementById('precio-final');
-      const datosCelular = document.getElementById('datos-celular');
-      let precioBaseARS = 0;
-      let precioBaseUSD = 0;
+  setTimeout(() => {
+    const imeiInput = document.getElementById('imei-buscar');
+    const bonificacionInput = document.getElementById('bonificacion');
+    const modeloSpan = document.getElementById('venta-modelo');
+    const colorSpan = document.getElementById('venta-color');
+    const precioSpanARS = document.getElementById('venta-precio-ars');
+    const precioSpanUSD = document.getElementById('venta-precio-usd');
+    const finalSpan = document.getElementById('precio-final');
+    const datosCelular = document.getElementById('datos-celular');
+    let precioBaseARS = 0;
+    let precioBaseUSD = 0;
 
-      imeiInput.addEventListener('blur', () => {
-        const imei = imeiInput.value.trim();
-        if (!imei) return;
+    imeiInput.addEventListener('blur', () => {
+      const imei = imeiInput.value.trim();
+      if (!imei) return;
 
-        db.ref('mercaderia').orderByChild('imei').equalTo(imei).once('value', snapshot => {
-          if (snapshot.exists()) {
-            const data = Object.values(snapshot.val())[0];
-            modeloSpan.textContent = data.modelo;
-            colorSpan.textContent = data.color;
-            precioBaseARS = parseFloat(data.precioVenta) || 0; // Aquí asignas precioBaseARS correctamente
-            precioBaseUSD = parseFloat(data.precioVentaUSD) || 0;
-            precioSpanARS.textContent = precioBaseARS.toFixed(2);
-            precioSpanUSD.textContent = precioBaseUSD.toFixed(2);
-            finalSpan.textContent = precioBaseARS.toFixed(2); // Actualiza el precio final con precioBaseARS
-            datosCelular.classList.remove('hidden');
-          } else {
-            alert('IMEI no encontrado en la base de mercadería');
-            datosCelular.classList.add('hidden');
-          }
-        });
+      db.ref('mercaderia').orderByChild('imei').equalTo(imei).once('value', snapshot => {
+        if (snapshot.exists()) {
+          const data = Object.values(snapshot.val())[0];
+          modeloSpan.textContent = data.modelo;
+          colorSpan.textContent = data.color;
+          precioBaseARS = parseFloat(data.precioVenta) || 0;
+          precioBaseUSD = parseFloat(data.precioVentaUSD) || 0;
+          precioSpanARS.textContent = precioBaseARS.toFixed(2);
+          precioSpanUSD.textContent = precioBaseUSD.toFixed(2);
+          finalSpan.textContent = precioBaseARS.toFixed(2);
+          datosCelular.classList.remove('hidden');
+        } else {
+          alert('IMEI no encontrado en la base de mercadería');
+          datosCelular.classList.add('hidden');
+        }
       });
+    });
 
+    bonificacionInput.addEventListener('input', () => {
+      const bonif = parseFloat(bonificacionInput.value) || 0;
+      const moneda = document.getElementById('moneda').value;
+      const base = moneda === 'USD' ? precioBaseUSD : precioBaseARS;
+      const final = base - (base * bonif / 100);
+      finalSpan.textContent = final.toFixed(2);
+    });
 
-      bonificacionInput.addEventListener('input', () => {
-        const bonif = parseFloat(bonificacionInput.value) || 0;
-        const moneda = document.getElementById('moneda').value;
-        const base = moneda === 'USD' ? precioBaseUSD : precioBaseARS;
-        const final = base - (base * bonif / 100);
-        finalSpan.textContent = final.toFixed(2);
-      });
+    document.getElementById('moneda').addEventListener('change', () => {
+      const bonif = parseFloat(bonificacionInput.value) || 0;
+      const moneda = document.getElementById('moneda').value;
+      const base = moneda === 'USD' ? precioBaseUSD : precioBaseARS;
+      const final = base - (base * bonif / 100);
+      finalSpan.textContent = final.toFixed(2);
+    });
 
-      document.getElementById('moneda').addEventListener('change', () => {
-        const bonif = parseFloat(bonificacionInput.value) || 0;
-        const moneda = document.getElementById('moneda').value;
-        const base = moneda === 'USD' ? precioBaseUSD : precioBaseARS;
-        const final = base - (base * bonif / 100);
-        finalSpan.textContent = final.toFixed(2);
-      });
-    }, 100);
-
-    // Aquí se agrega el submit para guardar en Firebase
-
-    const form = document.getElementById('form-venta');
-    form.addEventListener('submit', function (e) {
+    // Aquí agregamos el submit para guardar la venta en Firebase
+    const formVenta = document.getElementById('form-venta');
+    formVenta.addEventListener('submit', (e) => {
       e.preventDefault();
 
-      const imei = document.getElementById("imei-buscar").value.trim();
-      const cliente = form[1].value.trim();
-      const dni = form[2].value.trim();
-      const moneda = document.getElementById("moneda").value;
-      const formaPago = document.getElementById("forma-pago").value;
-      const precioFinal = parseFloat(finalSpan.textContent);
-      const bonificacion = parseFloat(document.getElementById('bonificacion').value) || 0;
-      const tasaCambio = parseFloat(document.getElementById("tasa-cambio-venta").value);
+      const precioFinal = parseFloat(finalSpan.textContent) || 0;
 
       const venta = {
-        fecha: form[0].value,
-        cliente,
-        dni,
-        imei,
-        modelo: document.getElementById('venta-modelo').textContent,
-        color: document.getElementById('venta-color').textContent,
+        fecha: formVenta[0].value,
+        cliente: formVenta[1].value,
+        dni: formVenta[2].value,
+        imei: imeiInput.value.trim(),
+        modelo: modeloSpan.textContent,
+        color: colorSpan.textContent,
         precioBaseARS: precioBaseARS,
         precioBaseUSD: precioBaseUSD,
-        bonificacion,
-        precioFinal,
-        moneda,
-        formaPago,
-        tasaCambio,
+        bonificacion: parseFloat(bonificacionInput.value) || 0,
+        precioFinal: precioFinal,
+        formaPago: document.getElementById('forma-pago').value,
+        moneda: document.getElementById('moneda').value,
+        montoPesos: parseFloat(document.getElementById('monto-pesos').value) || 0,
+        montoUSD: parseFloat(document.getElementById('monto-dolares').value) || 0,
+        tasaCambio: parseFloat(document.getElementById('tasa-cambio-venta').value) || 0,
         creadoEn: new Date().toISOString()
       };
 
+      // Guardar en Firebase
       db.ref('ventas').push(venta)
         .then(() => {
           alert("✅ Venta registrada con éxito");
-          form.reset();
-          document.getElementById('datos-celular').classList.add('hidden');
+          formVenta.reset();
+          datosCelular.classList.add('hidden');
         })
         .catch(err => {
-          alert('❌ Error al guardar la venta: ' + err.message);
+          alert("❌ Error al guardar la venta: " + err.message);
         });
     });
-  } else if (tipo === "gasto") {
+  }, 100);
+} else if (tipo === "gasto") {
         contenedor.innerHTML = `
           <h2 class="text-2xl font-bold mb-4 text-red-700">Registrar Gasto</h2>
           <form id="form-gasto" class="grid grid-cols-1 gap-4">
