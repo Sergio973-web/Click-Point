@@ -375,33 +375,6 @@ function mostrarFormulario(tipo) {
       return isNaN(num) ? 0 : +num.toFixed(2);
     }
 
-
-    document.addEventListener('submit', function(e) {
-      if (e.target.id === 'form-mercaderia') {
-        e.preventDefault();
-
-        const data = {
-          imei: document.getElementById('imei').value.trim(),
-          modelo: document.getElementById('modelo').value.trim(),
-          color: document.getElementById('color').value.trim(),
-          duracionBateria: document.getElementById('duracion').value.trim(),
-          monedaCompra: document.getElementById('moneda-compra').value,
-          tasaCambio: parseDecimal(document.getElementById('tasa-cambio').value),
-          precioCompra: parseDecimal(document.getElementById('precio-compra').value),
-          precioVenta: parseDecimal(document.getElementById('precio-venta-ars').value),
-          precioVentaUSD: parseDecimal(document.getElementById('precio-venta-usd').value),
-          fechaIngreso: document.getElementById('fecha').value,
-          estado: document.getElementById('estado').value,
-          observaciones: document.getElementById('observaciones').value.trim(),
-          creadoEn: new Date().toISOString()
-        };
-
-        db.ref('mercaderia').push(data);
-        alert('📦 Mercadería guardada con éxito');
-        e.target.reset();
-      }
-
-
       if (e.target.id === 'form-venta') {
         e.preventDefault();
         const f = e.target;
