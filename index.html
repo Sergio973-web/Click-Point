@@ -195,16 +195,6 @@ function mostrarFormulario(tipo) {
           <input class="border p-2 rounded w-full" type="number" id="bonificacion" value="0" min="0" max="100">
         </label>
 
-        <label>Monto pagado en Pesos (ARS):
-          <input class="border p-2 rounded w-full" type="number" id="monto-pesos" min="0" step="0.01" value="0">
-        </label>
-
-        <label>Monto pagado en Dólares (USD):
-          <input class="border p-2 rounded w-full" type="number" id="monto-dolares" min="0" step="0.01" value="0">
-        </label>
-
-        <p class="text-xl font-bold">Precio final: $<span id="precio-final">0.00</span></p>
-
         <label>Forma de pago:
           <select class="border p-2 rounded w-full" id="forma-pago" required>
             <option value="">Seleccionar</option>
@@ -226,6 +216,18 @@ function mostrarFormulario(tipo) {
           <input type="number" min="0" step="0.01" id="tasa-cambio-venta" class="border p-2 rounded w-full" />
         </label>
 
+
+        <label>Monto pagado en Pesos (ARS):
+          <input class="border p-2 rounded w-full" type="number" id="monto-pesos" min="0" step="0.01" value="0">
+        </label>
+
+        <label>Monto pagado en Dólares (USD):
+          <input class="border p-2 rounded w-full" type="number" id="monto-dolares" min="0" step="0.01" value="0">
+        </label>
+
+        <p class="text-xl font-bold">Precio final: $<span id="precio-final">0.00</span></p>
+
+        
         <button type="submit" class="bg-green-600 hover:bg-green-700 text-white py-2 rounded">Registrar Venta</button>
       </form>
     `;
