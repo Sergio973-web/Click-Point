@@ -316,6 +316,7 @@ function mostrarFormulario(tipo) {
           alert("✅ Venta registrada con éxito");
           form.reset();
           document.getElementById('datos-celular').classList.add('hidden');
+          location.reload();  // <---- Esta línea recarga la página después del registro
         })
         .catch(err => {
           alert('❌ Error al guardar la venta: ' + err.message);
