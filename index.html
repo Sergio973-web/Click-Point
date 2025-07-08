@@ -71,7 +71,7 @@ function mostrarFormulario(tipo) {
           <option value="USD">Dólares (USD)</option>
         </select>
 
-        <input class="border p-2 rounded" type="number" id="tasa-cambio" placeholder="Tasa de cambio USD a ARS" step="0.01" value="0" required>
+        <input class="border p-2 rounded" type="number" id="tasa-cambio" placeholder="Tasa de cambio USD a ARS" step="0.01" required>
         <input class="border p-2 rounded" type="number" id="precio-compra" placeholder="Precio de compra" step="0.01" required>
         <input class="border p-2 rounded" type="number" id="precio-venta-ars" placeholder="Precio de venta sugerido ARS" step="0.01" required>
         <input class="border p-2 rounded" type="number" id="precio-venta-usd" placeholder="Precio de venta sugerido USD" step="0.01" required>
@@ -180,7 +180,7 @@ function mostrarFormulario(tipo) {
 
         <label>
           Tasa de cambio (USD a ARS):
-          <input type="number" min="0" step="0.01" id="tasa-cambio-venta" value="0" class="border p-2 rounded w-full" />
+          <input type="number" min="0" step="0.01" id="tasa-cambio-venta" class="border p-2 rounded w-full" />
         </label>
 
         <button type="submit" class="bg-green-600 hover:bg-green-700 text-white py-2 rounded">Registrar Venta</button>
@@ -288,7 +288,7 @@ function mostrarFormulario(tipo) {
             </label>
             <label>
               Tasa de cambio (USD a ARS):
-              <input type="number" min="0" step="0.01" class="border p-2 rounded w-full" id="tasa-cambio" value="0" required>
+              <input type="number" min="0" step="0.01" class="border p-2 rounded w-full" id="tasa-cambio" required>
             </label>
             <button type="submit" class="bg-purple-600 hover:bg-purple-700 text-white py-2 rounded">Calcular Balance</button>
           </form>
