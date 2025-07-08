@@ -375,6 +375,9 @@ function mostrarFormulario(tipo) {
       return isNaN(num) ? 0 : +num.toFixed(2);
     }
 
+
+    document.addEventListener('submit', function(e) {
+      
       if (e.target.id === 'form-venta') {
         e.preventDefault();
         const f = e.target;
