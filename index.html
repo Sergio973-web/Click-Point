@@ -203,12 +203,6 @@ function mostrarFormulario(tipo) {
         <input class="border p-2 rounded w-full" type="number" id="monto-dolares" min="0" step="0.01" value="0">
       </label>
 
-      <label>Tasa de cambio (USD a ARS):
-        <input type="number" min="0" step="0.01" id="tasa-cambio-venta" class="border p-2 rounded w-full" value="0" />
-      </label>
-
-      <p class="text-xl font-bold">Precio final: $<span id="precio-final">0.00</span></p>
-
       <label>Forma de pago:
         <select class="border p-2 rounded w-full" id="forma-pago" required>
           <option value="">Seleccionar</option>
@@ -224,6 +218,10 @@ function mostrarFormulario(tipo) {
           <option value="USD">Dólares</option>
         </select>
       </label>
+
+      <p class="text-xl font-bold">Precio final: $<span id="precio-final">0.00</span></p>
+
+      
 
       <button type="submit" class="bg-green-600 hover:bg-green-700 text-white py-2 rounded">Registrar Venta</button>
     </form>
@@ -306,7 +304,7 @@ function mostrarFormulario(tipo) {
         moneda: document.getElementById('moneda').value,
         montoPesos: parseFloat(document.getElementById('monto-pesos').value) || 0,
         montoUSD: parseFloat(document.getElementById('monto-dolares').value) || 0,
-        tasaCambio: parseFloat(document.getElementById('tasa-cambio-venta').value) || 0,
+        
         creadoEn: new Date().toISOString()
       };
 
