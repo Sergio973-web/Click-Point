@@ -288,25 +288,25 @@ function mostrarFormulario(tipo) {
       const formaPago = document.getElementById("forma-pago").value;
       const precioFinal = parseFloat(finalSpan.textContent);
       const bonificacion = parseFloat(document.getElementById('bonificacion').value) || 0;
-      
-      const venta = {
-          fecha: form[0].value,
-          cliente,
-          dni,
-          imei,
-          modelo: document.getElementById('venta-modelo').textContent,
-          color: document.getElementById('venta-color').textContent,
-          precioBaseARS: precioBaseARS,
-          precioBaseUSD: precioBaseUSD,
-          bonificacion,
-          moneda,
-          formaPago,
-          
-          montoPesos,
-          montoDolares,
-          creadoEn: new Date().toISOString()
-        };
+      const montoPesos = parseFloat(document.getElementById('monto-pesos').value) || 0;
+      const montoDolares = parseFloat(document.getElementById('monto-dolares').value) || 0;
 
+      const venta = {
+        fecha: form[0].value,
+        cliente,
+        dni,
+        imei,
+        modelo: document.getElementById('venta-modelo').textContent,
+        color: document.getElementById('venta-color').textContent,
+        precioBaseARS: precioBaseARS,
+        precioBaseUSD: precioBaseUSD,
+        bonificacion,
+        moneda,
+        formaPago,
+        montoPesos,
+        montoDolares,
+        creadoEn: new Date().toISOString()
+      };
 
       db.ref('ventas').push(venta)
         .then(() => {
