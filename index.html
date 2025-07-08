@@ -203,7 +203,7 @@ function mostrarFormulario(tipo) {
           <input class="border p-2 rounded w-full" type="number" id="monto-dolares" min="0" step="0.01" value="0">
         </label>
 
-        <p class="text-xl font-bold">Total pagado (ARS + USD a cotización): $<span id="precio-final">0.00</span></p>
+        <p class="text-xl font-bold">Precio final: $<span id="precio-final">0.00</span></p>
 
         <label>Forma de pago:
           <select class="border p-2 rounded w-full" id="forma-pago" required>
@@ -280,6 +280,49 @@ function mostrarFormulario(tipo) {
         finalSpan.textContent = final.toFixed(2);
       });
     }, 100);
+
+    // Aquí se agrega el submit para guardar en Firebase
+
+    const form = document.getElementById('form-venta');
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+
+      const imei = document.getElementById("imei-buscar").value.trim();
+      const cliente = form[1].value.trim();
+      const dni = form[2].value.trim();
+      const moneda = document.getElementById("moneda").value;
+      const formaPago = document.getElementById("forma-pago").value;
+      const precioFinal = parseFloat(finalSpan.textContent);
+      const bonificacion = parseFloat(document.getElementById('bonificacion').value) || 0;
+      const tasaCambio = parseFloat(document.getElementById("tasa-cambio-venta").value);
+
+      const venta = {
+        fecha: form[0].value,
+        cliente,
+        dni,
+        imei,
+        modelo: document.getElementById('venta-modelo').textContent,
+        color: document.getElementById('venta-color').textContent,
+        precioBaseARS: precioBaseARS,
+        precioBaseUSD: precioBaseUSD,
+        bonificacion,
+        precioFinal,
+        moneda,
+        formaPago,
+        tasaCambio,
+        creadoEn: new Date().toISOString()
+      };
+
+      db.ref('ventas').push(venta)
+        .then(() => {
+          alert("✅ Venta registrada con éxito");
+          form.reset();
+          document.getElementById('datos-celular').classList.add('hidden');
+        })
+        .catch(err => {
+          alert('❌ Error al guardar la venta: ' + err.message);
+        });
+    });
   } else if (tipo === "gasto") {
         contenedor.innerHTML = `
           <h2 class="text-2xl font-bold mb-4 text-red-700">Registrar Gasto</h2>
@@ -378,37 +421,7 @@ function mostrarFormulario(tipo) {
 
     document.addEventListener('submit', function(e) {
       
-      if (e.target.id === 'form-venta') {
-        e.preventDefault();
-        const f = e.target;
-
-        const precioFinal = parseDecimal(document.getElementById('precio-final').textContent);
-
-        const venta = {
-          fecha: f[0].value,
-          cliente: f[1].value,
-          dni: f[2].value,
-          imei: f[3].value,
-          modelo: document.getElementById('venta-modelo').textContent,
-          color: document.getElementById('venta-color').textContent,
-          precioBaseARS: precioBaseARS,
-          precioBaseUSD: precioBaseUSD,
-          bonificacion: parseDecimal(document.getElementById('bonificacion').value),
-          precioFinal: precioFinal,
-          formaPago: document.getElementById('forma-pago').value,
-          moneda: document.getElementById('moneda').value,
-          montoPesos: parseDecimal(document.getElementById('monto-pesos').value),
-          montoUSD: parseDecimal(document.getElementById('monto-dolares').value),
-          tasaCambio: parseDecimal(document.getElementById('tasa-cambio-venta').value),
-          creadoEn: new Date().toISOString()
-        };
-
-        db.ref('ventas').push(venta);
-        alert("✅ Venta registrada con éxito");
-        f.reset();
-        document.getElementById('datos-celular').classList.add('hidden');
-      }
-
+      
 
       if (e.target.id === 'form-gasto') {
         e.preventDefault();
