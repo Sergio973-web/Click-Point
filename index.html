@@ -250,7 +250,7 @@ function mostrarFormulario(tipo) {
           precioBaseUSD = parseFloat(data.precioVentaUSD) || 0;
           precioSpanARS.textContent = precioBaseARS.toFixed(2);
           precioSpanUSD.textContent = precioBaseUSD.toFixed(2);
-          finalSpan.textContent = precioSpanARS.toFixed(2); // Actualiza el precio final con precioBaseARS
+          finalSpan.textContent = precioBaseARS.toFixed(2); // Actualiza el precio final con precioBaseARS
           datosCelular.classList.remove('hidden');
         } else {
           alert('IMEI no encontrado en la base de mercadería');
@@ -289,21 +289,23 @@ function mostrarFormulario(tipo) {
       const bonificacion = parseFloat(document.getElementById('bonificacion').value) || 0;
       
       const venta = {
-        fecha: form[0].value,
-        cliente,
-        dni,
-        imei,
-        modelo: document.getElementById('venta-modelo').textContent,
-        color: document.getElementById('venta-color').textContent,
-        precioBaseARS: precioBaseARS,
-        precioBaseUSD: precioBaseUSD,
-        bonificacion,
-        precioFinal,
-        moneda,
-        formaPago,
-        
-        creadoEn: new Date().toISOString()
-      };
+          fecha: form[0].value,
+          cliente,
+          dni,
+          imei,
+          modelo: document.getElementById('venta-modelo').textContent,
+          color: document.getElementById('venta-color').textContent,
+          precioBaseARS: precioBaseARS,
+          precioBaseUSD: precioBaseUSD,
+          bonificacion,
+          moneda,
+          formaPago,
+          tasaCambio,
+          montoPesos,
+          montoDolares,
+          creadoEn: new Date().toISOString()
+        };
+
 
       db.ref('ventas').push(venta)
         .then(() => {
