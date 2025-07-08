@@ -49,143 +49,195 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    let precioBase = 0;
-    let precioBaseUSD = 0;
-    function mostrarFormulario(tipo) {
-      const contenedor = document.getElementById("formulario");
-      contenedor.classList.remove("hidden");
+let precioBase = 0;
+let precioBaseUSD = 0;
 
-      if (tipo === "mercaderia") {
-        contenedor.innerHTML = `
-          <h2 class="text-2xl font-bold mb-4 text-blue-700">Ingreso de Mercadería</h2>
-          <form id="form-mercaderia" class="grid grid-cols-1 gap-4">
-            <input class="border p-2 rounded" type="text" placeholder="IMEI" required>
-            <input class="border p-2 rounded" type="text" placeholder="Modelo" required>
-            <input class="border p-2 rounded" type="text" placeholder="Color" required>
-            <input class="border p-2 rounded" type="text" placeholder="Duración de batería">
-            <input class="border p-2 rounded" type="text" placeholder="Precio de compra" required inputmode="decimal" pattern="[0-9]+([.,][0-9]{0,2})?">
-            <input class="border p-2 rounded" type="text" placeholder="Precio de venta" required inputmode="decimal" pattern="[0-9]+([.,][0-9]{0,2})?">
-            <input class="border p-2 rounded" type="date" required>
-            <select class="border p-2 rounded">
-              <option value="">Estado</option>
-              <option value="nuevo">Nuevo</option>
-              <option value="usado">Usado</option>
-            </select>
-            <textarea class="border p-2 rounded" placeholder="Observaciones..."></textarea>
-            <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white py-2 rounded">Guardar</button>
-          </form>
-        `;
-      } else if (tipo === "venta") {
-        contenedor.innerHTML = `
-          <h2 class="text-2xl font-bold mb-4 text-green-700">Venta</h2>
-          <form id="form-venta" class="grid grid-cols-1 gap-4">
-          <input class="border p-2 rounded" type="date" required>
-          <input class="border p-2 rounded" type="text" placeholder="Nombre y Apellido" required>
-          <input class="border p-2 rounded" type="text" placeholder="DNI" required>
-          <input class="border p-2 rounded" type="text" id="imei-buscar" placeholder="IMEI" required>
+function mostrarFormulario(tipo) {
+  const contenedor = document.getElementById("formulario");
+  contenedor.classList.remove("hidden");
 
-          <div id="datos-celular" class="bg-gray-100 p-4 rounded hidden">
-            <p><strong>Modelo:</strong> <span id="venta-modelo"></span></p>
-            <p><strong>Color:</strong> <span id="venta-color"></span></p>
-            <p><strong>Precio base en ARS:</strong> $<span id="venta-precio-ars"></span></p>
-            <p><strong>Precio base en USD:</strong> $<span id="venta-precio-usd"></span></p>
-          </div>
+  if (tipo === "mercaderia") {
+    contenedor.innerHTML = `
+      <h2 class="text-2xl font-bold mb-4 text-blue-700">Ingreso de Mercadería</h2>
+      <form id="form-mercaderia" class="grid grid-cols-1 gap-4">
+        <input class="border p-2 rounded" type="text" id="imei" placeholder="IMEI" required>
+        <input class="border p-2 rounded" type="text" id="modelo" placeholder="Modelo" required>
+        <input class="border p-2 rounded" type="text" id="color" placeholder="Color" required>
+        <input class="border p-2 rounded" type="text" id="duracion" placeholder="Duración de batería">
 
-          <label>Bonificación (%):
-            <input class="border p-2 rounded w-full" type="number" id="bonificacion" value="0" min="0" max="100">
-          </label>
+        <select id="moneda-compra" class="border p-2 rounded" required>
+          <option value="">Moneda de compra</option>
+          <option value="ARS">Pesos (ARS)</option>
+          <option value="USD">Dólares (USD)</option>
+        </select>
 
-          <label>Monto pagado en Pesos (ARS):
-            <input class="border p-2 rounded w-full" type="number" id="monto-pesos" min="0" step="0.01" value="0">
-          </label>
+        <input class="border p-2 rounded" type="number" id="tasa-cambio" placeholder="Tasa de cambio USD a ARS" step="0.01" value="1245" required>
+        <input class="border p-2 rounded" type="number" id="precio-compra" placeholder="Precio de compra" step="0.01" required>
+        <input class="border p-2 rounded" type="number" id="precio-venta-ars" placeholder="Precio de venta sugerido ARS" step="0.01" required>
+        <input class="border p-2 rounded" type="number" id="precio-venta-usd" placeholder="Precio de venta sugerido USD" step="0.01" required>
 
-          <label>Monto pagado en Dólares (USD):
-            <input class="border p-2 rounded w-full" type="number" id="monto-dolares" min="0" step="0.01" value="0">
-          </label>
+        <input class="border p-2 rounded" type="date" id="fecha" required>
+        <select id="estado" class="border p-2 rounded">
+          <option value="">Estado</option>
+          <option value="nuevo">Nuevo</option>
+          <option value="usado">Usado</option>
+        </select>
 
-          <p class="text-xl font-bold">Total pagado (ARS + USD a cotización): $<span id="precio-final">0.00</span></p>
+        <textarea class="border p-2 rounded" id="observaciones" placeholder="Observaciones..."></textarea>
+        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white py-2 rounded">Guardar</button>
+      </form>
+    `;
 
-          <label>Forma de pago:
-            <select class="border p-2 rounded w-full" id="forma-pago" required>
-              <option value="">Seleccionar</option>
-              <option value="efectivo">Efectivo</option>
-              <option value="transferencia">Transferencia</option>
-              <option value="tarjeta">Tarjeta de crédito</option>
-            </select>
-          </label>
+    setTimeout(() => {
+      document.getElementById("form-mercaderia").addEventListener("submit", function (e) {
+        e.preventDefault();
 
-          <label>Moneda:
-            <select id="moneda" class="border p-2 rounded w-full">
-              <option value="ARS">Pesos</option>
-              <option value="USD">Dólares</option>
-            </select>
-          </label>
+        const imei = document.getElementById("imei").value.trim();
+        const modelo = document.getElementById("modelo").value.trim();
+        const color = document.getElementById("color").value.trim();
+        const duracion = document.getElementById("duracion").value.trim();
+        const monedaCompra = document.getElementById("moneda-compra").value;
+        const tasaCambio = parseFloat(document.getElementById("tasa-cambio").value);
+        const precioCompra = parseFloat(document.getElementById("precio-compra").value);
+        const precioVentaARS = parseFloat(document.getElementById("precio-venta-ars").value);
+        const precioVentaUSD = parseFloat(document.getElementById("precio-venta-usd").value);
+        const fecha = document.getElementById("fecha").value;
+        const estado = document.getElementById("estado").value;
+        const observaciones = document.getElementById("observaciones").value.trim();
 
-          <label>
-            Tasa de cambio (USD a ARS):
-            <input type="number" min="0" step="0.01" id="tasa-cambio-venta" value="1245" class="border p-2 rounded w-full" />
-          </label>
+        const precioCompraEnARS = monedaCompra === 'USD' ? precioCompra * tasaCambio : precioCompra;
 
-          <button type="submit" class="bg-green-600 hover:bg-green-700 text-white py-2 rounded">Registrar Venta</button>
-        </form>
+        const producto = {
+          imei,
+          modelo,
+          color,
+          duracion,
+          monedaCompra,
+          tasaCambio,
+          precioCompra: precioCompraEnARS,
+          precioVenta: precioVentaARS,
+          precioVentaUSD: precioVentaUSD,
+          fechaIngreso: fecha,
+          estado,
+          observaciones
+        };
 
-        `;
-
-        setTimeout(() => {
-          const imeiInput = document.getElementById('imei-buscar');
-          const bonificacionInput = document.getElementById('bonificacion');
-          const precioSpan = document.getElementById('venta-precio');
-          const modeloSpan = document.getElementById('venta-modelo');
-          const colorSpan = document.getElementById('venta-color');
-          const finalSpan = document.getElementById('precio-final');
-          const datosCelular = document.getElementById('datos-celular');
-
-          imeiInput.addEventListener('blur', () => {
-            const imei = imeiInput.value.trim();
-            if (!imei) return;
-
-            db.ref('mercaderia').orderByChild('imei').equalTo(imei).once('value', snapshot => {
-              if (snapshot.exists()) {
-                const data = Object.values(snapshot.val())[0];
-                modeloSpan.textContent = data.modelo;
-                colorSpan.textContent = data.color;
-                precioBaseARS = parseFloat(data.precioVenta) || 0;
-                precioBaseUSD = parseFloat(data.precioVentaUSD) || 0;
-                precioSpanARS.textContent = precioBaseARS.toFixed(2);
-                precioSpanUSD.textContent = precioBaseUSD.toFixed(2);
-                finalSpan.textContent = precioBaseARS.toFixed(2);
-                datosCelular.classList.remove('hidden');
-              } else {
-                alert('IMEI no encontrado en la base de mercadería');
-                datosCelular.classList.add('hidden');
-              }
-            });
-
+        db.ref('mercaderia').push(producto)
+          .then(() => {
+            alert('Producto guardado correctamente.');
+            e.target.reset();
+          })
+          .catch(err => {
+            alert('Error al guardar el producto: ' + err.message);
           });
+      });
+    }, 100);
+  } else if (tipo === "venta") {
+    contenedor.innerHTML = `
+      <h2 class="text-2xl font-bold mb-4 text-green-700">Venta</h2>
+      <form id="form-venta" class="grid grid-cols-1 gap-4">
+        <input class="border p-2 rounded" type="date" required>
+        <input class="border p-2 rounded" type="text" placeholder="Nombre y Apellido" required>
+        <input class="border p-2 rounded" type="text" placeholder="DNI" required>
+        <input class="border p-2 rounded" type="text" id="imei-buscar" placeholder="IMEI" required>
 
-          bonificacionInput.addEventListener('input', () => {
-            const bonif = parseFloat(bonificacionInput.value) || 0;
-            let precioBase = 0;
-            const moneda = document.getElementById('moneda').value;
-            if (moneda === 'USD') {
-              precioBase = precioBaseUSD;
-            } else {
-              precioBase = precioBaseARS;
-            }
-            const final = precioBase - (precioBase * bonif / 100);
-            finalSpan.textContent = final.toFixed(2);
-          });
-          // Aquí agregás el event listener para el cambio de moneda:
-          document.getElementById('moneda').addEventListener('change', () => {
-            const moneda = document.getElementById('moneda').value;
-            const bonif = parseFloat(bonificacionInput.value) || 0;
-            let precioBase = moneda === 'USD' ? precioBaseUSD : precioBaseARS;
-            const final = precioBase - (precioBase * bonif / 100);
-            finalSpan.textContent = final.toFixed(2);
-          });
+        <div id="datos-celular" class="bg-gray-100 p-4 rounded hidden">
+          <p><strong>Modelo:</strong> <span id="venta-modelo"></span></p>
+          <p><strong>Color:</strong> <span id="venta-color"></span></p>
+          <p><strong>Precio base en ARS:</strong> $<span id="venta-precio-ars"></span></p>
+          <p><strong>Precio base en USD:</strong> $<span id="venta-precio-usd"></span></p>
+        </div>
 
-        }, 100);
-      } else if (tipo === "gasto") {
+        <label>Bonificación (%):
+          <input class="border p-2 rounded w-full" type="number" id="bonificacion" value="0" min="0" max="100">
+        </label>
+
+        <label>Monto pagado en Pesos (ARS):
+          <input class="border p-2 rounded w-full" type="number" id="monto-pesos" min="0" step="0.01" value="0">
+        </label>
+
+        <label>Monto pagado en Dólares (USD):
+          <input class="border p-2 rounded w-full" type="number" id="monto-dolares" min="0" step="0.01" value="0">
+        </label>
+
+        <p class="text-xl font-bold">Total pagado (ARS + USD a cotización): $<span id="precio-final">0.00</span></p>
+
+        <label>Forma de pago:
+          <select class="border p-2 rounded w-full" id="forma-pago" required>
+            <option value="">Seleccionar</option>
+            <option value="efectivo">Efectivo</option>
+            <option value="transferencia">Transferencia</option>
+            <option value="tarjeta">Tarjeta de crédito</option>
+          </select>
+        </label>
+
+        <label>Moneda:
+          <select id="moneda" class="border p-2 rounded w-full">
+            <option value="ARS">Pesos</option>
+            <option value="USD">Dólares</option>
+          </select>
+        </label>
+
+        <label>
+          Tasa de cambio (USD a ARS):
+          <input type="number" min="0" step="0.01" id="tasa-cambio-venta" value="1245" class="border p-2 rounded w-full" />
+        </label>
+
+        <button type="submit" class="bg-green-600 hover:bg-green-700 text-white py-2 rounded">Registrar Venta</button>
+      </form>
+    `;
+
+    setTimeout(() => {
+      const imeiInput = document.getElementById('imei-buscar');
+      const bonificacionInput = document.getElementById('bonificacion');
+      const modeloSpan = document.getElementById('venta-modelo');
+      const colorSpan = document.getElementById('venta-color');
+      const precioSpanARS = document.getElementById('venta-precio-ars');
+      const precioSpanUSD = document.getElementById('venta-precio-usd');
+      const finalSpan = document.getElementById('precio-final');
+      const datosCelular = document.getElementById('datos-celular');
+      let precioBaseARS = 0;
+      let precioBaseUSD = 0;
+
+      imeiInput.addEventListener('blur', () => {
+        const imei = imeiInput.value.trim();
+        if (!imei) return;
+
+        db.ref('mercaderia').orderByChild('imei').equalTo(imei).once('value', snapshot => {
+          if (snapshot.exists()) {
+            const data = Object.values(snapshot.val())[0];
+            modeloSpan.textContent = data.modelo;
+            colorSpan.textContent = data.color;
+            precioBaseARS = parseFloat(data.precioVenta) || 0;
+            precioBaseUSD = parseFloat(data.precioVentaUSD) || 0;
+            precioSpanARS.textContent = precioBaseARS.toFixed(2);
+            precioSpanUSD.textContent = precioBaseUSD.toFixed(2);
+            finalSpan.textContent = precioBaseARS.toFixed(2);
+            datosCelular.classList.remove('hidden');
+          } else {
+            alert('IMEI no encontrado en la base de mercadería');
+            datosCelular.classList.add('hidden');
+          }
+        });
+      });
+
+      bonificacionInput.addEventListener('input', () => {
+        const bonif = parseFloat(bonificacionInput.value) || 0;
+        const moneda = document.getElementById('moneda').value;
+        const base = moneda === 'USD' ? precioBaseUSD : precioBaseARS;
+        const final = base - (base * bonif / 100);
+        finalSpan.textContent = final.toFixed(2);
+      });
+
+      document.getElementById('moneda').addEventListener('change', () => {
+        const bonif = parseFloat(bonificacionInput.value) || 0;
+        const moneda = document.getElementById('moneda').value;
+        const base = moneda === 'USD' ? precioBaseUSD : precioBaseARS;
+        const final = base - (base * bonif / 100);
+        finalSpan.textContent = final.toFixed(2);
+      });
+    }, 100);
+  } else if (tipo === "gasto") {
         contenedor.innerHTML = `
           <h2 class="text-2xl font-bold mb-4 text-red-700">Registrar Gasto</h2>
           <form id="form-gasto" class="grid grid-cols-1 gap-4">
@@ -305,6 +357,9 @@
       if (e.target.id === 'form-venta') {
         e.preventDefault();
         const f = e.target;
+
+        const precioFinal = parseDecimal(document.getElementById('precio-final').textContent);
+
         const venta = {
           fecha: f[0].value,
           cliente: f[1].value,
@@ -315,9 +370,12 @@
           precioBaseARS: precioBaseARS,
           precioBaseUSD: precioBaseUSD,
           bonificacion: parseDecimal(document.getElementById('bonificacion').value),
-          precioFinal: parseDecimal(document.getElementById('precio-final').textContent),
+          precioFinal: precioFinal,
           formaPago: document.getElementById('forma-pago').value,
           moneda: document.getElementById('moneda').value,
+          montoPesos: parseDecimal(document.getElementById('monto-pesos').value),
+          montoUSD: parseDecimal(document.getElementById('monto-dolares').value),
+          tasaCambio: parseDecimal(document.getElementById('tasa-cambio-venta').value),
           creadoEn: new Date().toISOString()
         };
 
@@ -326,6 +384,7 @@
         f.reset();
         document.getElementById('datos-celular').classList.add('hidden');
       }
+
 
       if (e.target.id === 'form-gasto') {
         e.preventDefault();
