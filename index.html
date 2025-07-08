@@ -71,7 +71,7 @@ function mostrarFormulario(tipo) {
           <option value="USD">Dólares (USD)</option>
         </select>
 
-        <input class="border p-2 rounded" type="number" id="tasa-cambio" placeholder="Tasa de cambio USD a ARS" step="0.01" value="1245" required>
+        <input class="border p-2 rounded" type="number" id="tasa-cambio" placeholder="Tasa de cambio USD a ARS" step="0.01" value="0" required>
         <input class="border p-2 rounded" type="number" id="precio-compra" placeholder="Precio de compra" step="0.01" required>
         <input class="border p-2 rounded" type="number" id="precio-venta-ars" placeholder="Precio de venta sugerido ARS" step="0.01" required>
         <input class="border p-2 rounded" type="number" id="precio-venta-usd" placeholder="Precio de venta sugerido USD" step="0.01" required>
@@ -180,7 +180,7 @@ function mostrarFormulario(tipo) {
 
         <label>
           Tasa de cambio (USD a ARS):
-          <input type="number" min="0" step="0.01" id="tasa-cambio-venta" value="1245" class="border p-2 rounded w-full" />
+          <input type="number" min="0" step="0.01" id="tasa-cambio-venta" value="0" class="border p-2 rounded w-full" />
         </label>
 
         <button type="submit" class="bg-green-600 hover:bg-green-700 text-white py-2 rounded">Registrar Venta</button>
@@ -310,7 +310,7 @@ function mostrarFormulario(tipo) {
 
             const capitalPesos = parseFloat(document.getElementById('capital-pesos').value) || 0;
             const capitalDolares = parseFloat(document.getElementById('capital-dolares').value) || 0;
-            const tasaCambio = parseFloat(document.getElementById('tasa-cambio').value) || 1245;
+            const tasaCambio = parseFloat(document.getElementById('tasa-cambio').value) || 0;
 
             db.ref('capitalInicial').set({
               pesos: capitalPesos,
