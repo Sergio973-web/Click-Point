@@ -196,11 +196,18 @@ function mostrarFormulario(tipo) {
       </label>
 
       <label>Monto pagado en Pesos (ARS):
-        <input class="border p-2 rounded w-full" type="number" id="monto-pesos" min="0" step="0.01" value="0">
+        <input class="border p-2 rounded w-full" type="number" id="monto-pesos" min="0" step="0.01" value="0" readonly>
       </label>
 
       <label>Monto pagado en Dólares (USD):
         <input class="border p-2 rounded w-full" type="number" id="monto-dolares" min="0" step="0.01" value="0">
+      </label>
+
+      <label>Moneda:
+        <select id="moneda" class="border p-2 rounded w-full">
+          <option value="ARS">Pesos</option>
+          <option value="USD">Dólares</option>
+        </select>
       </label>
 
       <label>Forma de pago:
@@ -212,16 +219,7 @@ function mostrarFormulario(tipo) {
         </select>
       </label>
 
-      <label>Moneda:
-        <select id="moneda" class="border p-2 rounded w-full">
-          <option value="ARS">Pesos</option>
-          <option value="USD">Dólares</option>
-        </select>
-      </label>
-
       <p class="text-xl font-bold">Precio final: $<span id="precio-final">0.00</span></p>
-
-      
 
       <button type="submit" class="bg-green-600 hover:bg-green-700 text-white py-2 rounded">Registrar Venta</button>
     </form>
@@ -235,6 +233,7 @@ function mostrarFormulario(tipo) {
     const precioSpanARS = document.getElementById('venta-precio-ars');
     const precioSpanUSD = document.getElementById('venta-precio-usd');
     const finalSpan = document.getElementById('precio-final');
+    const montoPesosInput = document.getElementById('monto-pesos');
     const datosCelular = document.getElementById('datos-celular');
     let precioBaseARS = 0;
     let precioBaseUSD = 0;
@@ -261,7 +260,7 @@ function mostrarFormulario(tipo) {
       });
     });
 
-    // Calcular el precio final basado en la bonificación
+    // Calcular el precio final basado en la bonificación y la moneda elegida
     function calcularPrecioFinal() {
       const bonif = parseFloat(bonificacionInput.value) || 0;
       const moneda = document.getElementById('moneda').value;
@@ -275,6 +274,16 @@ function mostrarFormulario(tipo) {
 
       const final = base - (base * bonif / 100);
       finalSpan.textContent = final.toFixed(2);
+
+      // Calcular el monto pagado en Pesos según la moneda seleccionada
+      if (moneda === 'ARS') {
+        // Si la moneda es ARS, calculamos en base al precio base en ARS
+        montoPesosInput.value = final.toFixed(2);
+      } else {
+        // Si la moneda es USD, convertimos el monto a ARS
+        const montoPesos = final * tasaCambio;
+        montoPesosInput.value = montoPesos.toFixed(2);
+      }
     }
 
     // Eventos para actualizar el precio final
@@ -302,7 +311,7 @@ function mostrarFormulario(tipo) {
         precioFinal: precioFinal,
         formaPago: document.getElementById('forma-pago').value,
         moneda: document.getElementById('moneda').value,
-        montoPesos: parseFloat(document.getElementById('monto-pesos').value) || 0,
+        montoPesos: parseFloat(montoPesosInput.value) || 0,
         montoUSD: parseFloat(document.getElementById('monto-dolares').value) || 0,
         
         creadoEn: new Date().toISOString()
