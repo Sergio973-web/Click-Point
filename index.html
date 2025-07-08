@@ -251,7 +251,7 @@ function mostrarFormulario(tipo) {
           precioBaseUSD = parseFloat(data.precioVentaUSD) || 0;
           precioSpanARS.textContent = precioBaseARS.toFixed(2);
           precioSpanUSD.textContent = precioBaseUSD.toFixed(2);
-          finalSpan.textContent = precioBaseARS.toFixed(2);
+          calcularPrecioFinal();  // Recalcular al cargar los datos
           datosCelular.classList.remove('hidden');
         } else {
           alert('IMEI no encontrado en la base de mercadería');
