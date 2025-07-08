@@ -195,14 +195,6 @@ function mostrarFormulario(tipo) {
         <input class="border p-2 rounded w-full" type="number" id="bonificacion" value="0" min="0" max="100">
       </label>
 
-      <label>Monto pagado en Pesos (ARS):
-        <input class="border p-2 rounded w-full" type="number" id="monto-pesos" min="0" step="0.01" value="0" readonly>
-      </label>
-
-      <label>Monto pagado en Dólares (USD):
-        <input class="border p-2 rounded w-full" type="number" id="monto-dolares" min="0" step="0.01" value="0">
-      </label>
-
       <label>Moneda:
         <select id="moneda" class="border p-2 rounded w-full">
           <option value="ARS">Pesos</option>
@@ -219,6 +211,14 @@ function mostrarFormulario(tipo) {
         </select>
       </label>
 
+      <label>Monto pagado en Pesos (ARS):
+        <input class="border p-2 rounded w-full" type="number" id="monto-pesos" min="0" step="0.01" value="0" readonly>
+      </label>
+
+      <label>Monto pagado en Dólares (USD):
+        <input class="border p-2 rounded w-full" type="number" id="monto-dolares" min="0" step="0.01" value="0">
+      </label>
+
       <p class="text-xl font-bold">Precio final: $<span id="precio-final">0.00</span></p>
 
       <button type="submit" class="bg-green-600 hover:bg-green-700 text-white py-2 rounded">Registrar Venta</button>
@@ -233,34 +233,11 @@ function mostrarFormulario(tipo) {
     const precioSpanARS = document.getElementById('venta-precio-ars');
     const precioSpanUSD = document.getElementById('venta-precio-usd');
     const finalSpan = document.getElementById('precio-final');
-    const montoPesosInput = document.getElementById('monto-pesos');
     const datosCelular = document.getElementById('datos-celular');
     let precioBaseARS = 0;
     let precioBaseUSD = 0;
 
-    imeiInput.addEventListener('blur', () => {
-      const imei = imeiInput.value.trim();
-      if (!imei) return;
-
-      db.ref('mercaderia').orderByChild('imei').equalTo(imei).once('value', snapshot => {
-        if (snapshot.exists()) {
-          const data = Object.values(snapshot.val())[0];
-          modeloSpan.textContent = data.modelo;
-          colorSpan.textContent = data.color;
-          precioBaseARS = parseFloat(data.precioVenta) || 0;
-          precioBaseUSD = parseFloat(data.precioVentaUSD) || 0;
-          precioSpanARS.textContent = precioBaseARS.toFixed(2);
-          precioSpanUSD.textContent = precioBaseUSD.toFixed(2);
-          calcularPrecioFinal();  // Recalcular al cargar los datos
-          datosCelular.classList.remove('hidden');
-        } else {
-          alert('IMEI no encontrado en la base de mercadería');
-          datosCelular.classList.add('hidden');
-        }
-      });
-    });
-
-    // Calcular el precio final basado en la bonificación y la moneda elegida
+    // Función para calcular el precio final con bonificación y moneda seleccionada
     function calcularPrecioFinal() {
       const bonif = parseFloat(bonificacionInput.value) || 0;
       const moneda = document.getElementById('moneda').value;
@@ -274,30 +251,42 @@ function mostrarFormulario(tipo) {
 
       const final = base - (base * bonif / 100);
       finalSpan.textContent = final.toFixed(2);
-
-      // Calcular el monto pagado en Pesos según la moneda seleccionada
-      if (moneda === 'ARS') {
-        // Si la moneda es ARS, calculamos en base al precio base en ARS
-        montoPesosInput.value = final.toFixed(2);
-      } else {
-        // Si la moneda es USD, convertimos el monto a ARS
-        const montoPesos = final * tasaCambio;
-        montoPesosInput.value = montoPesos.toFixed(2);
-      }
     }
 
-    // Eventos para actualizar el precio final
+    // Escuchar eventos de actualización
     bonificacionInput.addEventListener('input', calcularPrecioFinal);
     document.getElementById('moneda').addEventListener('change', calcularPrecioFinal);
     document.getElementById('tasa-cambio-venta').addEventListener('input', calcularPrecioFinal);
 
-    // Guardar la venta en Firebase
+    // Evento para buscar el IMEI y cargar los datos del producto desde Firebase
+    imeiInput.addEventListener('blur', () => {
+      const imei = imeiInput.value.trim();
+      if (!imei) return;
+
+      db.ref('mercaderia').orderByChild('imei').equalTo(imei).once('value', snapshot => {
+        if (snapshot.exists()) {
+          const data = Object.values(snapshot.val())[0];
+          modeloSpan.textContent = data.modelo;
+          colorSpan.textContent = data.color;
+          precioBaseARS = parseFloat(data.precioVenta) || 0;
+          precioBaseUSD = parseFloat(data.precioVentaUSD) || 0;
+          precioSpanARS.textContent = precioBaseARS.toFixed(2);
+          precioSpanUSD.textContent = precioBaseUSD.toFixed(2);
+          finalSpan.textContent = precioBaseARS.toFixed(2);
+          datosCelular.classList.remove('hidden');
+        } else {
+          alert('IMEI no encontrado en la base de mercadería');
+          datosCelular.classList.add('hidden');
+        }
+      });
+    });
+
+    // Evento para manejar el envío del formulario
     const formVenta = document.getElementById('form-venta');
     formVenta.addEventListener('submit', (e) => {
       e.preventDefault();
 
       const precioFinal = parseFloat(finalSpan.textContent) || 0;
-
       const venta = {
         fecha: formVenta[0].value,
         cliente: formVenta[1].value,
@@ -311,9 +300,8 @@ function mostrarFormulario(tipo) {
         precioFinal: precioFinal,
         formaPago: document.getElementById('forma-pago').value,
         moneda: document.getElementById('moneda').value,
-        montoPesos: parseFloat(montoPesosInput.value) || 0,
+        montoPesos: parseFloat(document.getElementById('monto-pesos').value) || 0,
         montoUSD: parseFloat(document.getElementById('monto-dolares').value) || 0,
-        
         creadoEn: new Date().toISOString()
       };
 
