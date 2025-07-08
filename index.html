@@ -57,82 +57,125 @@ function mostrarFormulario(tipo) {
   contenedor.classList.remove("hidden");
 
   if (tipo === "mercaderia") {
-    contenedor.innerHTML = `
-      <h2 class="text-2xl font-bold mb-4 text-blue-700">Ingreso de Mercadería</h2>
-      <form id="form-mercaderia" class="grid grid-cols-1 gap-4">
-        <input class="border p-2 rounded" type="text" id="imei" placeholder="IMEI" required>
-        <input class="border p-2 rounded" type="text" id="modelo" placeholder="Modelo" required>
-        <input class="border p-2 rounded" type="text" id="color" placeholder="Color" required>
-        <input class="border p-2 rounded" type="text" id="duracion" placeholder="Duración de batería">
+  contenedor.innerHTML = `
+    <h2 class="text-2xl font-bold mb-4 text-blue-700">Ingreso de Mercadería</h2>
+    <form id="form-mercaderia" class="grid grid-cols-1 gap-4">
+      <input class="border p-2 rounded" type="text" id="imei" placeholder="IMEI" required>
+      <input class="border p-2 rounded" type="text" id="modelo" placeholder="Modelo" required>
+      <input class="border p-2 rounded" type="text" id="color" placeholder="Color" required>
+      <input class="border p-2 rounded" type="text" id="duracion" placeholder="Duración de batería">
 
-        <select id="moneda-compra" class="border p-2 rounded" required>
-          <option value="">Moneda de compra</option>
-          <option value="ARS">Pesos (ARS)</option>
-          <option value="USD">Dólares (USD)</option>
-        </select>
+      <select id="moneda-compra" class="border p-2 rounded" required>
+        <option value="">Moneda de compra</option>
+        <option value="ARS">Pesos (ARS)</option>
+        <option value="USD">Dólares (USD)</option>
+      </select>
 
-        <input class="border p-2 rounded" type="number" id="tasa-cambio" placeholder="Tasa de cambio USD a ARS" step="0.01" required>
-        <input class="border p-2 rounded" type="number" id="precio-compra" placeholder="Precio de compra" step="0.01" required>
-        <input class="border p-2 rounded" type="number" id="precio-venta-ars" placeholder="Precio de venta sugerido ARS" step="0.01" required>
-        <input class="border p-2 rounded" type="number" id="precio-venta-usd" placeholder="Precio de venta sugerido USD" step="0.01" required>
+      <input class="border p-2 rounded" type="number" id="tasa-cambio" placeholder="Tasa de cambio USD a ARS" step="0.01" required>
+      <input class="border p-2 rounded" type="number" id="precio-compra" placeholder="Precio de compra" step="0.01" required>
+      <input class="border p-2 rounded" type="number" id="precio-venta-ars" placeholder="Precio de venta sugerido ARS" step="0.01" required>
+      <input class="border p-2 rounded" type="number" id="precio-venta-usd" placeholder="Precio de venta sugerido USD" step="0.01" required>
 
-        <input class="border p-2 rounded" type="date" id="fecha" required>
-        <select id="estado" class="border p-2 rounded">
-          <option value="">Estado</option>
-          <option value="nuevo">Nuevo</option>
-          <option value="usado">Usado</option>
-        </select>
+      <input class="border p-2 rounded" type="date" id="fecha" required>
+      <select id="estado" class="border p-2 rounded">
+        <option value="">Estado</option>
+        <option value="nuevo">Nuevo</option>
+        <option value="usado">Usado</option>
+      </select>
 
-        <textarea class="border p-2 rounded" id="observaciones" placeholder="Observaciones..."></textarea>
-        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white py-2 rounded">Guardar</button>
-      </form>
-    `;
+      <textarea class="border p-2 rounded" id="observaciones" placeholder="Observaciones..."></textarea>
+      <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white py-2 rounded">Guardar</button>
+    </form>
+  `;
 
-    setTimeout(() => {
-      document.getElementById("form-mercaderia").addEventListener("submit", function (e) {
-        e.preventDefault();
+  setTimeout(() => {
+    const form = document.getElementById("form-mercaderia");
 
-        const imei = document.getElementById("imei").value.trim();
-        const modelo = document.getElementById("modelo").value.trim();
-        const color = document.getElementById("color").value.trim();
-        const duracion = document.getElementById("duracion").value.trim();
-        const monedaCompra = document.getElementById("moneda-compra").value;
-        const tasaCambio = parseFloat(document.getElementById("tasa-cambio").value);
-        const precioCompra = parseFloat(document.getElementById("precio-compra").value);
-        const precioVentaARS = parseFloat(document.getElementById("precio-venta-ars").value);
-        const precioVentaUSD = parseFloat(document.getElementById("precio-venta-usd").value);
-        const fecha = document.getElementById("fecha").value;
-        const estado = document.getElementById("estado").value;
-        const observaciones = document.getElementById("observaciones").value.trim();
+    const monedaSelect = document.getElementById("moneda-compra");
+    const tasaCambioInput = document.getElementById("tasa-cambio");
+    const precioVentaARSInput = document.getElementById("precio-venta-ars");
+    const precioVentaUSDInput = document.getElementById("precio-venta-usd");
 
-        const precioCompraEnARS = monedaCompra === 'USD' ? precioCompra * tasaCambio : precioCompra;
+    // ✅ Si la moneda es ARS, al escribir el precio en ARS se calcula el USD
+    precioVentaARSInput.addEventListener("input", () => {
+      if (monedaSelect.value === "ARS") {
+        const precioARS = parseFloat(precioVentaARSInput.value) || 0;
+        const tasa = parseFloat(tasaCambioInput.value) || 1;
+        const precioUSD = precioARS / tasa;
+        precioVentaUSDInput.value = precioUSD.toFixed(2);
+      }
+    });
 
-        const producto = {
-          imei,
-          modelo,
-          color,
-          duracion,
-          monedaCompra,
-          tasaCambio,
-          precioCompra: precioCompraEnARS,
-          precioVenta: precioVentaARS,
-          precioVentaUSD: precioVentaUSD,
-          fechaIngreso: fecha,
-          estado,
-          observaciones
-        };
+    // ✅ Si cambia la tasa de cambio y la moneda es ARS, se recalcula USD
+    tasaCambioInput.addEventListener("input", () => {
+      if (monedaSelect.value === "ARS") {
+        const precioARS = parseFloat(precioVentaARSInput.value) || 0;
+        const tasa = parseFloat(tasaCambioInput.value) || 1;
+        const precioUSD = precioARS / tasa;
+        precioVentaUSDInput.value = precioUSD.toFixed(2);
+      } else if (monedaSelect.value === "USD") {
+        const precioUSD = parseFloat(precioVentaUSDInput.value) || 0;
+        const tasa = parseFloat(tasaCambioInput.value) || 1;
+        const precioARS = precioUSD * tasa;
+        precioVentaARSInput.value = precioARS.toFixed(2);
+      }
+    });
 
-        db.ref('mercaderia').push(producto)
-          .then(() => {
-            alert('Producto guardado correctamente.');
-            e.target.reset();
-          })
-          .catch(err => {
-            alert('Error al guardar el producto: ' + err.message);
-          });
-      });
-    }, 100);
-  } else if (tipo === "venta") {
+    // ✅ Si la moneda es USD, al escribir el precio en USD se calcula el ARS
+    precioVentaUSDInput.addEventListener("input", () => {
+      if (monedaSelect.value === "USD") {
+        const precioUSD = parseFloat(precioVentaUSDInput.value) || 0;
+        const tasa = parseFloat(tasaCambioInput.value) || 1;
+        const precioARS = precioUSD * tasa;
+        precioVentaARSInput.value = precioARS.toFixed(2);
+      }
+    });
+
+    form.addEventListener("submit", function (e) {
+      e.preventDefault();
+
+      const imei = document.getElementById("imei").value.trim();
+      const modelo = document.getElementById("modelo").value.trim();
+      const color = document.getElementById("color").value.trim();
+      const duracion = document.getElementById("duracion").value.trim();
+      const monedaCompra = document.getElementById("moneda-compra").value;
+      const tasaCambio = parseFloat(document.getElementById("tasa-cambio").value);
+      const precioCompra = parseFloat(document.getElementById("precio-compra").value);
+      const precioVentaARS = parseFloat(document.getElementById("precio-venta-ars").value);
+      const precioVentaUSD = parseFloat(document.getElementById("precio-venta-usd").value);
+      const fecha = document.getElementById("fecha").value;
+      const estado = document.getElementById("estado").value;
+      const observaciones = document.getElementById("observaciones").value.trim();
+
+      const precioCompraEnARS = monedaCompra === 'USD' ? precioCompra * tasaCambio : precioCompra;
+
+      const producto = {
+        imei,
+        modelo,
+        color,
+        duracionBateria: duracion,
+        monedaCompra,
+        tasaCambio,
+        precioCompra: precioCompraEnARS,
+        precioVenta: precioVentaARS,
+        precioVentaUSD: precioVentaUSD,
+        fechaIngreso: fecha,
+        estado,
+        observaciones,
+        creadoEn: new Date().toISOString()
+      };
+
+      db.ref('mercaderia').push(producto)
+        .then(() => {
+          alert('📦 Producto guardado correctamente.');
+          form.reset();
+        })
+        .catch(err => {
+          alert('❌ Error al guardar el producto: ' + err.message);
+        });
+    });
+  }, 100);
+} else if (tipo === "venta") {
     contenedor.innerHTML = `
       <h2 class="text-2xl font-bold mb-4 text-green-700">Venta</h2>
       <form id="form-venta" class="grid grid-cols-1 gap-4">
