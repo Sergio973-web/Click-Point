@@ -251,11 +251,11 @@ function mostrarFormulario(tipo) {
             const data = Object.values(snapshot.val())[0];
             modeloSpan.textContent = data.modelo;
             colorSpan.textContent = data.color;
-            precioBaseARS = parseFloat(data.precioVenta) || 0;
+            precioBaseARS = parseFloat(data.precioVenta) || 0; // Aquí asignas precioBaseARS correctamente
             precioBaseUSD = parseFloat(data.precioVentaUSD) || 0;
             precioSpanARS.textContent = precioBaseARS.toFixed(2);
             precioSpanUSD.textContent = precioBaseUSD.toFixed(2);
-            finalSpan.textContent = precioBaseARS.toFixed(2);
+            finalSpan.textContent = precioBaseARS.toFixed(2); // Actualiza el precio final con precioBaseARS
             datosCelular.classList.remove('hidden');
           } else {
             alert('IMEI no encontrado en la base de mercadería');
@@ -263,6 +263,7 @@ function mostrarFormulario(tipo) {
           }
         });
       });
+
 
       bonificacionInput.addEventListener('input', () => {
         const bonif = parseFloat(bonificacionInput.value) || 0;
