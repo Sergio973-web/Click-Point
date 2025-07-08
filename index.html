@@ -239,24 +239,44 @@ function mostrarFormulario(tipo) {
 
     // Función para calcular el precio final con bonificación y moneda seleccionada
     function calcularPrecioFinal() {
+      const bonificacionInput = document.getElementById('bonificacion');
+      const finalSpan = document.getElementById('precio-final');
+
+      // Verificar si los elementos existen
+      if (!bonificacionInput || !finalSpan) {
+        console.error('Faltan elementos en el DOM');
+        return; // Salir si los elementos no están disponibles
+      }
+
       const bonif = parseFloat(bonificacionInput.value) || 0;
       const moneda = document.getElementById('moneda').value;
       const tasaCambio = parseFloat(document.getElementById('tasa-cambio-venta').value) || 1;
-      let base = moneda === 'USD' ? precioBaseUSD : precioBaseARS;
       
-      // Si la moneda es USD y hay tasa de cambio, convertimos a ARS
+      // Verificar si los valores de precios base están definidos
+      let base = (moneda === 'USD') ? precioBaseUSD : precioBaseARS;
+      
       if (moneda === 'USD' && tasaCambio > 0) {
-        base = precioBaseUSD * tasaCambio;
+        base = precioBaseUSD * tasaCambio; // Convertir USD a ARS
       }
 
       const final = base - (base * bonif / 100);
-      finalSpan.textContent = final.toFixed(2);
+      finalSpan.textContent = final.toFixed(2); // Actualiza el precio final
     }
 
-    // Escuchar eventos de actualización
-    bonificacionInput.addEventListener('input', calcularPrecioFinal);
-    document.getElementById('moneda').addEventListener('change', calcularPrecioFinal);
-    document.getElementById('tasa-cambio-venta').addEventListener('input', calcularPrecioFinal);
+    // Añadir eventos solo si los elementos existen
+    const bonificacionInput = document.getElementById('bonificacion');
+    const monedaInput = document.getElementById('moneda');
+    const tasaCambioInput = document.getElementById('tasa-cambio-venta');
+    const finalSpan = document.getElementById('precio-final');
+
+    // Verificar si los elementos existen antes de agregar los listeners
+    if (bonificacionInput && monedaInput && tasaCambioInput && finalSpan) {
+      bonificacionInput.addEventListener('input', calcularPrecioFinal);
+      monedaInput.addEventListener('change', calcularPrecioFinal);
+      tasaCambioInput.addEventListener('input', calcularPrecioFinal);
+    } else {
+      console.error('Faltan elementos en el DOM para los eventos');
+    }
 
     // Evento para buscar el IMEI y cargar los datos del producto desde Firebase
     imeiInput.addEventListener('blur', () => {
