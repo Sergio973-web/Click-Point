@@ -203,6 +203,10 @@ function mostrarFormulario(tipo) {
         <input class="border p-2 rounded w-full" type="number" id="monto-dolares" min="0" step="0.01" value="0">
       </label>
 
+      <label>Tasa de cambio (USD a ARS):
+        <input type="number" min="0" step="0.01" id="tasa-cambio-venta" class="border p-2 rounded w-full" value="0" />
+      </label>
+
       <p class="text-xl font-bold">Precio final: $<span id="precio-final">0.00</span></p>
 
       <label>Forma de pago:
@@ -219,11 +223,6 @@ function mostrarFormulario(tipo) {
           <option value="ARS">Pesos</option>
           <option value="USD">Dólares</option>
         </select>
-      </label>
-
-      <label>
-        Tasa de cambio (USD a ARS):
-        <input type="number" min="0" step="0.01" id="tasa-cambio-venta" class="border p-2 rounded w-full" />
       </label>
 
       <button type="submit" class="bg-green-600 hover:bg-green-700 text-white py-2 rounded">Registrar Venta</button>
@@ -264,23 +263,28 @@ function mostrarFormulario(tipo) {
       });
     });
 
-    bonificacionInput.addEventListener('input', () => {
+    // Calcular el precio final basado en la bonificación
+    function calcularPrecioFinal() {
       const bonif = parseFloat(bonificacionInput.value) || 0;
       const moneda = document.getElementById('moneda').value;
-      const base = moneda === 'USD' ? precioBaseUSD : precioBaseARS;
+      const tasaCambio = parseFloat(document.getElementById('tasa-cambio-venta').value) || 1;
+      let base = moneda === 'USD' ? precioBaseUSD : precioBaseARS;
+      
+      // Si la moneda es USD y hay tasa de cambio, convertimos a ARS
+      if (moneda === 'USD' && tasaCambio > 0) {
+        base = precioBaseUSD * tasaCambio;
+      }
+
       const final = base - (base * bonif / 100);
       finalSpan.textContent = final.toFixed(2);
-    });
+    }
 
-    document.getElementById('moneda').addEventListener('change', () => {
-      const bonif = parseFloat(bonificacionInput.value) || 0;
-      const moneda = document.getElementById('moneda').value;
-      const base = moneda === 'USD' ? precioBaseUSD : precioBaseARS;
-      const final = base - (base * bonif / 100);
-      finalSpan.textContent = final.toFixed(2);
-    });
+    // Eventos para actualizar el precio final
+    bonificacionInput.addEventListener('input', calcularPrecioFinal);
+    document.getElementById('moneda').addEventListener('change', calcularPrecioFinal);
+    document.getElementById('tasa-cambio-venta').addEventListener('input', calcularPrecioFinal);
 
-    // Aquí agregamos el submit para guardar la venta en Firebase
+    // Guardar la venta en Firebase
     const formVenta = document.getElementById('form-venta');
     formVenta.addEventListener('submit', (e) => {
       e.preventDefault();
@@ -306,7 +310,6 @@ function mostrarFormulario(tipo) {
         creadoEn: new Date().toISOString()
       };
 
-      // Guardar en Firebase
       db.ref('ventas').push(venta)
         .then(() => {
           alert("✅ Venta registrada con éxito");
