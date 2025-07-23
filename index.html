@@ -239,6 +239,7 @@ function mostrarFormulario(tipo) {
     const precioSpanUSD = document.getElementById('venta-precio-usd');
     const finalSpan = document.getElementById('precio-final');
     const datosCelular = document.getElementById('datos-celular');
+    let productoKey = null;
     let precioBaseARS = 0;
     let precioBaseUSD = 0;
 
@@ -274,6 +275,7 @@ imeiInput.addEventListener('input', () => {
 
             // Al hacer clic en un producto, mostrar sus detalles abajo y ocultar la lista
             item.addEventListener('click', () => {
+              productoKey = key; // 🔐 Guardamos la clave del producto para luego borrarlo
               modeloSpan.textContent = prod.modelo || '';
               colorSpan.textContent = prod.color || '';
               precioBaseARS = parseFloat(prod.precioVenta) || 0;
@@ -363,15 +365,27 @@ imeiInput.addEventListener('input', () => {
       };
 
       db.ref('ventas').push(venta)
+  .then(() => {
+    // ✅ Si la venta se guardó bien, eliminamos el producto vendido
+    if (productoKey) {
+      db.ref('mercaderia').child(productoKey).remove()
         .then(() => {
-          alert("✅ Venta registrada con éxito");
-          form.reset();
-          document.getElementById('datos-celular').classList.add('hidden');
-          location.reload();  // <---- Esta línea recarga la página después del registro
+          console.log('✅ Producto eliminado de mercadería.');
         })
         .catch(err => {
-          alert('❌ Error al guardar la venta: ' + err.message);
+          console.error('❌ Error al eliminar el producto:', err);
         });
+    }
+
+    alert("✅ Venta registrada con éxito");
+    form.reset();
+    document.getElementById('datos-celular').classList.add('hidden');
+    location.reload();
+  })
+  .catch(err => {
+    alert('❌ Error al guardar la venta: ' + err.message);
+  });
+
     });
   }, 100);
 } else if (tipo === "gasto") {
