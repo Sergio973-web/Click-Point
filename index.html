@@ -243,53 +243,49 @@ function mostrarFormulario(tipo) {
     let precioBaseUSD = 0;
 
     let imeiTimeout;
-
 imeiInput.addEventListener('input', () => {
   clearTimeout(imeiTimeout);
-
   imeiTimeout = setTimeout(() => {
-    const imei = imeiInput.value.trim();
-    if (!imei) {
+    const query = imeiInput.value.trim();
+    if (!query) {
       datosCelular.classList.add('hidden');
       return;
     }
-
     db.ref('mercaderia')
-  .orderByChild('imei')
-  .equalTo(imei)
-  .once('value')
-  .then(snapshot => {
-    console.log('Snapshot:', snapshot.val());
-    if (snapshot.exists()) {
-      const data = Object.values(snapshot.val())[0];
-      console.log('Datos encontrados:', data);
+      .orderByChild('imei')
+      .startAt(query)
+      .endAt(query + "\uf8ff")
+      .once('value')
+      .then(snapshot => {
+        if (snapshot.exists()) {
+          const productos = snapshot.val();
+          // Aquí podés mostrar lista de productos coincidentes, o el primero:
+          const firstProduct = Object.values(productos)[0];
 
-      modeloSpan.textContent = data.modelo || '';
-      colorSpan.textContent = data.color || '';
+          modeloSpan.textContent = firstProduct.modelo || '';
+          colorSpan.textContent = firstProduct.color || '';
+          precioBaseARS = parseFloat(firstProduct.precioVenta) || 0;
+          precioBaseUSD = parseFloat(firstProduct.precioVentaUSD) || 0;
+          precioSpanARS.textContent = precioBaseARS.toFixed(2);
+          precioSpanUSD.textContent = precioBaseUSD.toFixed(2);
 
-      precioBaseARS = parseFloat(data.precioVenta) || 0;
-      precioBaseUSD = parseFloat(data.precioVentaUSD) || 0;
+          // calcular precio final con bonificación
+          const bonif = parseFloat(bonificacionInput.value) || 0;
+          const moneda = document.getElementById('moneda').value;
+          const base = moneda === 'USD' ? precioBaseUSD : precioBaseARS;
+          const final = base - (base * bonif / 100);
+          finalSpan.textContent = final.toFixed(2);
 
-      precioSpanARS.textContent = precioBaseARS.toFixed(2);
-      precioSpanUSD.textContent = precioBaseUSD.toFixed(2);
-
-      const bonif = parseFloat(bonificacionInput.value) || 0;
-      const moneda = document.getElementById('moneda').value;
-      const base = moneda === 'USD' ? precioBaseUSD : precioBaseARS;
-      const final = base - (base * bonif / 100);
-      finalSpan.textContent = final.toFixed(2);
-
-      datosCelular.classList.remove('hidden');
-    } else {
-      datosCelular.classList.add('hidden');
-    }
-  })
-  .catch(err => {
-    console.error('Error al buscar IMEI:', err);
-    datosCelular.classList.add('hidden');
-  });
-
-  }, 300); // Espera 300ms para evitar múltiples consultas rápidas
+          datosCelular.classList.remove('hidden');
+        } else {
+          datosCelular.classList.add('hidden');
+        }
+      })
+      .catch(err => {
+        console.error('Error al buscar IMEI:', err);
+        datosCelular.classList.add('hidden');
+      });
+  }, 300);
 });
 
     bonificacionInput.addEventListener('input', () => {
