@@ -183,7 +183,7 @@ function mostrarFormulario(tipo) {
       <input class="border p-2 rounded" type="text" placeholder="Nombre y Apellido" required>
       <input class="border p-2 rounded" type="text" placeholder="DNI" required>
       <input class="border p-2 rounded" type="text" id="imei-buscar" placeholder="IMEI" required>
-
+      <div id="lista-productos" class="border rounded p-2 max-h-40 overflow-auto hidden"></div>
       <div id="datos-celular" class="bg-gray-100 p-4 rounded hidden">
         <p><strong>Modelo:</strong> <span id="venta-modelo"></span></p>
         <p><strong>Color:</strong> <span id="venta-color"></span></p>
@@ -243,12 +243,16 @@ function mostrarFormulario(tipo) {
     let precioBaseUSD = 0;
 
     let imeiTimeout;
+const listaProductos = document.getElementById('lista-productos');
+
 imeiInput.addEventListener('input', () => {
   clearTimeout(imeiTimeout);
   imeiTimeout = setTimeout(() => {
     const query = imeiInput.value.trim();
     if (!query) {
       datosCelular.classList.add('hidden');
+      listaProductos.classList.add('hidden');
+      listaProductos.innerHTML = '';
       return;
     }
     db.ref('mercaderia')
@@ -259,31 +263,54 @@ imeiInput.addEventListener('input', () => {
       .then(snapshot => {
         if (snapshot.exists()) {
           const productos = snapshot.val();
-          // Aquí podés mostrar lista de productos coincidentes, o el primero:
-          const firstProduct = Object.values(productos)[0];
+          listaProductos.innerHTML = ''; // limpiar
+          listaProductos.classList.remove('hidden');
 
-          modeloSpan.textContent = firstProduct.modelo || '';
-          colorSpan.textContent = firstProduct.color || '';
-          precioBaseARS = parseFloat(firstProduct.precioVenta) || 0;
-          precioBaseUSD = parseFloat(firstProduct.precioVentaUSD) || 0;
-          precioSpanARS.textContent = precioBaseARS.toFixed(2);
-          precioSpanUSD.textContent = precioBaseUSD.toFixed(2);
+          // Crear un listado simple:
+          Object.entries(productos).forEach(([key, prod]) => {
+            const item = document.createElement('div');
+            item.classList.add('cursor-pointer', 'p-1', 'hover:bg-gray-200');
+            item.textContent = `${prod.modelo} - ${prod.color} - IMEI: ${prod.imei}`;
 
-          // calcular precio final con bonificación
-          const bonif = parseFloat(bonificacionInput.value) || 0;
-          const moneda = document.getElementById('moneda').value;
-          const base = moneda === 'USD' ? precioBaseUSD : precioBaseARS;
-          const final = base - (base * bonif / 100);
-          finalSpan.textContent = final.toFixed(2);
+            // Al hacer clic en un producto, mostrar sus detalles abajo y ocultar la lista
+            item.addEventListener('click', () => {
+              modeloSpan.textContent = prod.modelo || '';
+              colorSpan.textContent = prod.color || '';
+              precioBaseARS = parseFloat(prod.precioVenta) || 0;
+              precioBaseUSD = parseFloat(prod.precioVentaUSD) || 0;
+              precioSpanARS.textContent = precioBaseARS.toFixed(2);
+              precioSpanUSD.textContent = precioBaseUSD.toFixed(2);
 
-          datosCelular.classList.remove('hidden');
+              // calcular precio final con bonificación
+              const bonif = parseFloat(bonificacionInput.value) || 0;
+              const moneda = document.getElementById('moneda').value;
+              const base = moneda === 'USD' ? precioBaseUSD : precioBaseARS;
+              const final = base - (base * bonif / 100);
+              finalSpan.textContent = final.toFixed(2);
+
+              datosCelular.classList.remove('hidden');
+
+              // Ocultar lista de productos para no saturar la UI
+              listaProductos.classList.add('hidden');
+              listaProductos.innerHTML = '';
+
+              // Actualizar el campo IMEI con el seleccionado
+              imeiInput.value = prod.imei;
+            });
+
+            listaProductos.appendChild(item);
+          });
         } else {
           datosCelular.classList.add('hidden');
+          listaProductos.classList.add('hidden');
+          listaProductos.innerHTML = '';
         }
       })
       .catch(err => {
         console.error('Error al buscar IMEI:', err);
         datosCelular.classList.add('hidden');
+        listaProductos.classList.add('hidden');
+        listaProductos.innerHTML = '';
       });
   }, 300);
 });
