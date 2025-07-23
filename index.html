@@ -383,11 +383,12 @@ imeiInput.addEventListener('input', () => {
       location.reload(); // Recargar la página después de guardar
     })
     .catch(err => {
-      alert('❌ Error al guardar la venta: ' + err.message);
+          alert('❌ Error al guardar la venta: ' + err.message);
+        });
     });
-});
 
   }, 100);
+
 } else if (tipo === "gasto") {
         contenedor.innerHTML = `
           <h2 class="text-2xl font-bold mb-4 text-red-700">Registrar Gasto</h2>
