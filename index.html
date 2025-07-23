@@ -255,36 +255,40 @@ imeiInput.addEventListener('input', () => {
     }
 
     db.ref('mercaderia')
-      .orderByChild('imei')
-      .equalTo(imei)
-      .once('value')
-      .then(snapshot => {
-        if (snapshot.exists()) {
-          const data = Object.values(snapshot.val())[0];
+  .orderByChild('imei')
+  .equalTo(imei)
+  .once('value')
+  .then(snapshot => {
+    console.log('Snapshot:', snapshot.val());
+    if (snapshot.exists()) {
+      const data = Object.values(snapshot.val())[0];
+      console.log('Datos encontrados:', data);
 
-          modeloSpan.textContent = data.modelo || '';
-          colorSpan.textContent = data.color || '';
-          precioBaseARS = parseFloat(data.precioVenta) || 0;
-          precioBaseUSD = parseFloat(data.precioVentaUSD) || 0;
-          precioSpanARS.textContent = precioBaseARS.toFixed(2);
-          precioSpanUSD.textContent = precioBaseUSD.toFixed(2);
+      modeloSpan.textContent = data.modelo || '';
+      colorSpan.textContent = data.color || '';
 
-          // Calcular precio final con bonificación
-          const bonif = parseFloat(bonificacionInput.value) || 0;
-          const moneda = document.getElementById('moneda').value;
-          const base = moneda === 'USD' ? precioBaseUSD : precioBaseARS;
-          const final = base - (base * bonif / 100);
-          finalSpan.textContent = final.toFixed(2);
+      precioBaseARS = parseFloat(data.precioVenta) || 0;
+      precioBaseUSD = parseFloat(data.precioVentaUSD) || 0;
 
-          datosCelular.classList.remove('hidden');
-        } else {
-          datosCelular.classList.add('hidden');
-        }
-      })
-      .catch(err => {
-        console.error('Error al buscar IMEI:', err);
-        datosCelular.classList.add('hidden');
-      });
+      precioSpanARS.textContent = precioBaseARS.toFixed(2);
+      precioSpanUSD.textContent = precioBaseUSD.toFixed(2);
+
+      const bonif = parseFloat(bonificacionInput.value) || 0;
+      const moneda = document.getElementById('moneda').value;
+      const base = moneda === 'USD' ? precioBaseUSD : precioBaseARS;
+      const final = base - (base * bonif / 100);
+      finalSpan.textContent = final.toFixed(2);
+
+      datosCelular.classList.remove('hidden');
+    } else {
+      datosCelular.classList.add('hidden');
+    }
+  })
+  .catch(err => {
+    console.error('Error al buscar IMEI:', err);
+    datosCelular.classList.add('hidden');
+  });
+
   }, 300); // Espera 300ms para evitar múltiples consultas rápidas
 });
 
