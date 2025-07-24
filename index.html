@@ -275,7 +275,6 @@ imeiInput.addEventListener('input', () => {
 
             // Al hacer clic en un producto, mostrar sus detalles abajo y ocultar la lista
             item.addEventListener('click', () => {
-              productoKey = key; // 🔐 Guardamos la clave del producto para luego borrarlo
               modeloSpan.textContent = prod.modelo || '';
               colorSpan.textContent = prod.color || '';
               precioBaseARS = parseFloat(prod.precioVenta) || 0;
