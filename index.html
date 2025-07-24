@@ -363,10 +363,12 @@ function mostrarFormulario(tipo) {
             <button type="submit" class="bg-red-600 hover:bg-red-700 text-white py-2 rounded">Guardar Gasto</button>
           </form>
         `;
-      } else if (tipo === "consulta") {
+      } 
+      else if (tipo === "consulta") {
         contenedor.innerHTML = `
           <h2 class="text-2xl font-bold mb-4 text-gray-700">Consultas</h2>
-          <label class="block mb-4">
+
+          <label class="block mb-2">
             <span class="text-gray-700">Seleccionar tipo:</span>
             <select id="tipo-consulta" class="border p-2 rounded w-full">
               <option value="mercaderia">Mercadería</option>
@@ -374,13 +376,24 @@ function mostrarFormulario(tipo) {
               <option value="gastos">Gastos</option>
             </select>
           </label>
-          <div id="tabla-consultas" class="overflow-x-auto mt-4"></div>
 
-          
+          <label class="block my-4">
+            <span class="text-gray-700">Buscar:</span>
+            <input
+              type="text"
+              id="filtro-consulta"
+              placeholder="Filtrar por cualquier campo..."
+              class="px-3 py-2 border rounded w-full"
+              oninput="cargarConsulta()" />
+          </label>
+
+          <div id="tabla-consultas" class="overflow-x-auto mt-4"></div>
         `;
+
         document.getElementById('tipo-consulta').addEventListener('change', cargarConsulta);
         cargarConsulta();
-      } else if (tipo === "ganancia") {
+      }
+ else if (tipo === "ganancia") {
         contenedor.innerHTML = `
           <h2 class="text-2xl font-bold mb-4 text-yellow-700">Ganancia por Mes</h2>
           <label class="block mb-2 text-sm text-gray-700">Seleccionar Mes y Año:</label>
@@ -470,9 +483,11 @@ function mostrarFormulario(tipo) {
 
 function cargarConsulta() {
   const tipo = document.getElementById("tipo-consulta").value;
+  const filtroInput = document.getElementById("filtro-consulta");
+  const filtro = filtroInput ? filtroInput.value.toLowerCase() : '';
   const tablaContenedor = document.getElementById("tabla-consultas");
 
-  db.ref(tipo).limitToLast(10).once("value", snapshot => {
+  db.ref(tipo).limitToLast(100).once("value", snapshot => {
     if (!snapshot.exists()) {
       tablaContenedor.innerHTML = `<p class="text-gray-600">No hay datos para mostrar.</p>`;
       return;
@@ -480,7 +495,23 @@ function cargarConsulta() {
 
     const datos = snapshot.val();
     const entradas = Object.entries(datos);
+    if (entradas.length === 0) {
+      tablaContenedor.innerHTML = `<p class="text-gray-600">No hay entradas.</p>`;
+      return;
+    }
+
     const claves = Object.keys(entradas[0][1]);
+
+    const filtradas = entradas.filter(([_, item]) =>
+      claves.some(clave =>
+        String(item[clave] ?? '').toLowerCase().includes(filtro)
+      )
+    );
+
+    if (filtradas.length === 0) {
+      tablaContenedor.innerHTML = `<p class="text-gray-600">No se encontraron resultados para "${filtro}".</p>`;
+      return;
+    }
 
     let html = `<table class="min-w-full bg-white border border-gray-300">
       <thead>
@@ -490,7 +521,7 @@ function cargarConsulta() {
         </tr>
       </thead>
       <tbody>
-        ${entradas.map(([key, item]) => `
+        ${filtradas.map(([key, item]) => `
           <tr>
             ${claves.map(clave => `<td class="px-4 py-2 border text-sm">${item[clave] ?? ''}</td>`).join("")}
             <td class="px-4 py-2 border text-center">
@@ -505,6 +536,7 @@ function cargarConsulta() {
     tablaContenedor.innerHTML = html;
   });
 }
+
 
     // NUEVA FUNCIÓN PARA GANANCIAS MENSUALES
 function verGananciasMensuales() {
