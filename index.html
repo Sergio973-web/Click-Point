@@ -194,7 +194,6 @@ function mostrarFormulario(tipo) {
       <label>Bonificación (%):
         <input class="border p-2 rounded w-full" type="number" id="bonificacion" value="0" min="0" max="100">
       </label>
-
       <label>Forma de pago:
         <select class="border p-2 rounded w-full" id="forma-pago" required>
           <option value="">Seleccionar</option>
@@ -203,7 +202,6 @@ function mostrarFormulario(tipo) {
           <option value="tarjeta">Tarjeta de crédito</option>
         </select>
       </label>
-
       <label>Moneda:
         <select id="moneda" class="border p-2 rounded w-full">
           <option value="ARS">Pesos</option>
@@ -211,21 +209,17 @@ function mostrarFormulario(tipo) {
           <option value="AMBOS">Pesos y Dólares</option>
         </select>
       </label>
-
       <label>Monto pagado en Pesos (ARS):
         <input class="border p-2 rounded w-full" type="number" id="monto-pesos" min="0" step="0.01" value="0">
       </label>
-
       <label>Monto pagado en Dólares (USD):
         <input class="border p-2 rounded w-full" type="number" id="monto-dolares" min="0" step="0.01" value="0">
       </label>
-
       <label>Observaciones:
         <textarea id="observaciones" class="border p-2 rounded w-full" rows="3" placeholder="Opcional..."></textarea>
       </label>
 
       <p class="text-xl font-bold">Precio final: $<span id="precio-final">0.00</span></p>
-
       <button type="submit" class="bg-green-600 hover:bg-green-700 text-white py-2 rounded">Registrar Venta</button>
     </form>
   `;
@@ -244,149 +238,119 @@ function mostrarFormulario(tipo) {
     let precioBaseUSD = 0;
 
     let imeiTimeout;
-const listaProductos = document.getElementById('lista-productos');
+    const listaProductos = document.getElementById('lista-productos');
 
-imeiInput.addEventListener('input', () => {
-  clearTimeout(imeiTimeout);
-  imeiTimeout = setTimeout(() => {
-    const query = imeiInput.value.trim();
-    if (!query) {
-      datosCelular.classList.add('hidden');
-      listaProductos.classList.add('hidden');
-      listaProductos.innerHTML = '';
-      return;
-    }
-    db.ref('mercaderia')
-      .orderByChild('imei')
-      .startAt(query)
-      .endAt(query + "\uf8ff")
-      .once('value')
-      .then(snapshot => {
-        if (snapshot.exists()) {
-          const productos = snapshot.val();
-          listaProductos.innerHTML = ''; // limpiar
-          listaProductos.classList.remove('hidden');
-
-          // Crear un listado simple:
-          Object.entries(productos).forEach(([key, prod]) => {
-            const item = document.createElement('div');
-            item.classList.add('cursor-pointer', 'p-1', 'hover:bg-gray-200');
-            item.textContent = `${prod.modelo} - ${prod.color} - IMEI: ${prod.imei}`;
-
-            // Al hacer clic en un producto, mostrar sus detalles abajo y ocultar la lista
-            item.addEventListener('click', () => {
-              modeloSpan.textContent = prod.modelo || '';
-              colorSpan.textContent = prod.color || '';
-              precioBaseARS = parseFloat(prod.precioVenta) || 0;
-              precioBaseUSD = parseFloat(prod.precioVentaUSD) || 0;
-              precioSpanARS.textContent = precioBaseARS.toFixed(2);
-              precioSpanUSD.textContent = precioBaseUSD.toFixed(2);
-
-              // calcular precio final con bonificación
-              const bonif = parseFloat(bonificacionInput.value) || 0;
-              const moneda = document.getElementById('moneda').value;
-              const base = moneda === 'USD' ? precioBaseUSD : precioBaseARS;
-              const final = base - (base * bonif / 100);
-              finalSpan.textContent = final.toFixed(2);
-
-              datosCelular.classList.remove('hidden');
-
-              // Ocultar lista de productos para no saturar la UI
-              listaProductos.classList.add('hidden');
-              listaProductos.innerHTML = '';
-
-              // Actualizar el campo IMEI con el seleccionado
-              imeiInput.value = prod.imei;
-            });
-
-            listaProductos.appendChild(item);
-          });
-        } else {
+    imeiInput.addEventListener('input', () => {
+      clearTimeout(imeiTimeout);
+      imeiTimeout = setTimeout(() => {
+        const query = imeiInput.value.trim();
+        if (!query) {
           datosCelular.classList.add('hidden');
           listaProductos.classList.add('hidden');
           listaProductos.innerHTML = '';
+          return;
         }
-      })
-      .catch(err => {
-        console.error('Error al buscar IMEI:', err);
-        datosCelular.classList.add('hidden');
-        listaProductos.classList.add('hidden');
-        listaProductos.innerHTML = '';
-      });
-  }, 300);
-});
+
+        db.ref('mercaderia').orderByChild('imei')
+          .startAt(query)
+          .endAt(query + "\uf8ff")
+          .once('value')
+          .then(snapshot => {
+            if (snapshot.exists()) {
+              listaProductos.innerHTML = '';
+              listaProductos.classList.remove('hidden');
+
+              Object.entries(snapshot.val()).forEach(([key, prod]) => {
+                const item = document.createElement('div');
+                item.className = 'cursor-pointer p-1 hover:bg-gray-200';
+                item.textContent = `${prod.modelo} - ${prod.color} - IMEI: ${prod.imei}`;
+                item.addEventListener('click', () => {
+                  productoKey = key;
+                  modeloSpan.textContent = prod.modelo;
+                  colorSpan.textContent = prod.color;
+                  precioBaseARS = parseFloat(prod.precioVenta) || 0;
+                  precioBaseUSD = parseFloat(prod.precioVentaUSD) || 0;
+                  precioSpanARS.textContent = precioBaseARS.toFixed(2);
+                  precioSpanUSD.textContent = precioBaseUSD.toFixed(2);
+
+                  const bonif = parseFloat(bonificacionInput.value) || 0;
+                  const moneda = document.getElementById('moneda').value;
+                  const base = moneda === 'USD' ? precioBaseUSD : precioBaseARS;
+                  finalSpan.textContent = (base - (base * bonif/100)).toFixed(2);
+
+                  datosCelular.classList.remove('hidden');
+                  listaProductos.classList.add('hidden');
+                  listaProductos.innerHTML = '';
+                  imeiInput.value = prod.imei;
+                });
+                listaProductos.appendChild(item);
+              });
+            } else {
+              datosCelular.classList.add('hidden');
+              listaProductos.classList.add('hidden');
+              listaProductos.innerHTML = '';
+            }
+          })
+          .catch(err => {
+            console.error('Error al buscar IMEI:', err);
+            datosCelular.classList.add('hidden');
+            listaProductos.classList.add('hidden');
+            listaProductos.innerHTML = '';
+          });
+
+      }, 300);
+    });
 
     bonificacionInput.addEventListener('input', () => {
       const bonif = parseFloat(bonificacionInput.value) || 0;
       const moneda = document.getElementById('moneda').value;
       const base = moneda === 'USD' ? precioBaseUSD : precioBaseARS;
-      const final = base - (base * bonif / 100);
-      finalSpan.textContent = final.toFixed(2);
+      finalSpan.textContent = (base - (base * bonif/100)).toFixed(2);
     });
 
     document.getElementById('moneda').addEventListener('change', () => {
       const bonif = parseFloat(bonificacionInput.value) || 0;
       const moneda = document.getElementById('moneda').value;
       const base = moneda === 'USD' ? precioBaseUSD : precioBaseARS;
-      const final = base - (base * bonif / 100);
-      finalSpan.textContent = final.toFixed(2);
+      finalSpan.textContent = (base - (base * bonif/100)).toFixed(2);
     });
 
     const form = document.getElementById('form-venta');
-    form.addEventListener('submit', function (e) {
+    form.addEventListener('submit', e => {
       e.preventDefault();
-
-      const imei = document.getElementById("imei-buscar").value.trim();
-      const cliente = form[1].value.trim();
-      const dni = form[2].value.trim();
-      const moneda = document.getElementById("moneda").value;
-      const formaPago = document.getElementById("forma-pago").value;
-      const precioFinal = parseFloat(finalSpan.textContent);
-      const bonificacion = parseFloat(document.getElementById('bonificacion').value) || 0;
-      const montoPesos = parseFloat(document.getElementById('monto-pesos').value) || 0;
-      const montoDolares = parseFloat(document.getElementById('monto-dolares').value) || 0;
-      const observaciones = document.getElementById("observaciones").value.trim();
-
       const venta = {
         fecha: form[0].value,
-        cliente,
-        dni,
-        imei,
-        modelo: document.getElementById('venta-modelo').textContent,
-        color: document.getElementById('venta-color').textContent,
-        bonificacion,
-        moneda,
-        formaPago,
-        montoPesos,
-        montoDolares,
-        observaciones,
+        cliente: form[1].value.trim(),
+        dni: form[2].value.trim(),
+        imei: imeiInput.value.trim(),
+        modelo: modeloSpan.textContent,
+        color: colorSpan.textContent,
+        bonificacion: parseFloat(bonificacionInput.value) || 0,
+        moneda: document.getElementById('moneda').value,
+        formaPago: document.getElementById('forma-pago').value,
+        montoPesos: parseFloat(document.getElementById('monto-pesos').value) || 0,
+        montoDolares: parseFloat(document.getElementById('monto-dolares').value) || 0,
+        observaciones: document.getElementById('observaciones').value.trim(),
         creadoEn: new Date().toISOString()
       };
 
       db.ref('ventas').push(venta)
-  .then(() => {
-    // ✅ Si la venta se guardó bien, eliminamos el producto vendido
-    if (productoKey) {
-      db.ref('mercaderia').child(productoKey).remove()
         .then(() => {
-          console.log('✅ Producto eliminado de mercadería.');
+          if (productoKey) {
+            db.ref('mercaderia').child(productoKey).remove()
+              .then(() => console.log('✅ Producto eliminado de mercadería.'))
+              .catch(err => console.error('❌ Error al eliminar producto:', err));
+          }
+          alert("✅ Venta registrada con éxito");
+          form.reset();
+          datosCelular.classList.add('hidden');
+          location.reload();
         })
-        .catch(err => {
-          console.error('❌ Error al eliminar el producto:', err);
-        });
-    }
-
-    alert("✅ Venta registrada con éxito");
-    form.reset();
-    document.getElementById('datos-celular').classList.add('hidden');
-    location.reload();
-  })
-  .catch(err => {
-    alert('❌ Error al guardar la venta: ' + err.message);
-  });
-
+        .catch(err => alert('❌ Error al guardar la venta: ' + err.message));
     });
+
   }, 100);
+
 } else if (tipo === "gasto") {
         contenedor.innerHTML = `
           <h2 class="text-2xl font-bold mb-4 text-red-700">Registrar Gasto</h2>
