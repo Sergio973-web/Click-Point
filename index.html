@@ -244,6 +244,10 @@ function mostrarFormulario(tipo) {
         <p><strong>Color:</strong> <span id="venta-color"></span></p>
         <p><strong>Precio base en ARS:</strong> $<span id="venta-precio-ars"></span></p>
         <p><strong>Precio base en USD:</strong> $<span id="venta-precio-usd"></span></p>
+        <p><strong>Tasa usada:</strong>
+          <input type="number" id="tasa-cambio-venta" class="border p-1 rounded w-24" step="0.01" min="0" value="0">
+        </p>
+        <p><strong>Precio final sugerido:</strong> <span id="precio-final">0.00</span> <span id="precio-final-usd" class="text-gray-500 text-sm"></span></p>
       </div>
 
       <label>Bonificación (%):
@@ -274,12 +278,11 @@ function mostrarFormulario(tipo) {
         <textarea id="observaciones" class="border p-2 rounded w-full" rows="3" placeholder="Opcional..."></textarea>
       </label>
 
-      <p class="text-xl font-bold">Precio final: <span id="precio-final">0.00</span></p>
       <button type="submit" class="bg-green-600 hover:bg-green-700 text-white py-2 rounded">Registrar Venta</button>
     </form>
   `;
 
-setTimeout(() => {
+  setTimeout(() => {
   const imeiInput = document.getElementById('imei-buscar');
   const bonificacionInput = document.getElementById('bonificacion');
   const modeloSpan = document.getElementById('venta-modelo');
@@ -287,12 +290,17 @@ setTimeout(() => {
   const precioSpanARS = document.getElementById('venta-precio-ars');
   const precioSpanUSD = document.getElementById('venta-precio-usd');
   const finalSpan = document.getElementById('precio-final');
+  const finalSpanUSD = document.getElementById('precio-final-usd');
+  const tasaCambioInput = document.getElementById('tasa-cambio-venta');
   const datosCelular = document.getElementById('datos-celular');
   let productoKey = null;
   let precioBaseARS = 0;
   let precioBaseUSD = 0;
   let precioCompraGlobal = 0;
-  let tasaCambioGlobal = 0;
+  let tasaCambioGlobal = 1;
+
+  // **Agrego esta variable para guardar la tasa original con la que se tomó el producto**
+  let tasaOriginalCompra = 1;
 
   let imeiTimeout;
   const listaProductos = document.getElementById('lista-productos');
@@ -326,16 +334,19 @@ setTimeout(() => {
                 modeloSpan.textContent = prod.modelo;
                 colorSpan.textContent = prod.color;
 
-                // Asignar precios base y tasa de cambio
                 precioBaseARS = parseFloat(prod.precioVenta) || 0;
                 precioBaseUSD = parseFloat(prod.precioVentaUSD) || 0;
                 precioCompraGlobal = parseFloat(prod.precioCompra) || 0;
-                tasaCambioGlobal = parseFloat(prod.tasaCambio) || 0;
+                tasaCambioGlobal = parseFloat(prod.tasaCambio) || 1;
+
+                // **Guardo la tasa original que trae el producto para usar luego en cálculos**
+                tasaOriginalCompra = tasaCambioGlobal;
 
                 precioSpanARS.textContent = precioBaseARS.toFixed(2);
                 precioSpanUSD.textContent = precioBaseUSD.toFixed(2);
 
-                // Actualizar precio final al seleccionar producto
+                tasaCambioInput.value = tasaCambioGlobal.toFixed(2);
+
                 actualizarPrecioFinal();
 
                 datosCelular.classList.remove('hidden');
@@ -362,38 +373,42 @@ setTimeout(() => {
   });
 
   function actualizarPrecioFinal() {
-    const bonif = parseFloat(bonificacionInput.value) || 0;
-    const moneda = document.getElementById('moneda').value;
+  const bonif = parseFloat(bonificacionInput.value) || 0;
+  const tasaActual = parseFloat(tasaCambioInput.value) || 0;
 
-    const montoPesos = parseFloat(document.getElementById('monto-pesos').value) || 0;
-    const montoDolares = parseFloat(document.getElementById('monto-dolares').value) || 0;
+  // Esta tasa original la guardaste al seleccionar el producto
+  const tasaOriginal = tasaCambioGlobal || 1; // tasa guardada al seleccionar producto
 
-    // Base según moneda seleccionada (USD convertido a ARS)
-    let base = 0;
-    if (moneda === 'USD') {
-      base = precioBaseUSD * tasaCambioGlobal;
-    } else {
-      base = precioBaseARS;
-    }
+  // precioBaseUSD y precioBaseARS los asignaste también al seleccionar producto
+  // Precio sugerido en pesos = precioBaseUSD * tasaActual
+  let precioSugeridoPesos = precioBaseUSD * tasaActual;
 
-    // Precio sugerido con bonificación
-    const precioSugerido = base - (base * bonif / 100);
+  // Aplico la bonificación sobre pesos
+  precioSugeridoPesos = precioSugeridoPesos * (1 - bonif / 100);
 
-    // Monto real pagado convertido a pesos
-    const montoRealPesos = montoPesos + (montoDolares * tasaCambioGlobal);
+  // Precio sugerido en dólares = precio sugerido en pesos / tasa original
+  const precioSugeridoUSD = tasaOriginal > 0 ? precioSugeridoPesos / tasaOriginal : 0;
 
-    // Mostrar precio sugerido si no hay monto pagado, o monto pagado si hay
-    if (montoPesos === 0 && montoDolares === 0) {
-      finalSpan.textContent = `$${precioSugerido.toFixed(2)} (sugerido)`;
-    } else {
-      finalSpan.textContent = `$${montoRealPesos.toFixed(2)} (pagado)`;
-    }
+  const montoPesos = parseFloat(document.getElementById('monto-pesos').value) || 0;
+  const montoDolares = parseFloat(document.getElementById('monto-dolares').value) || 0;
+
+  const montoRealPesos = montoPesos + (montoDolares * tasaActual);
+
+  if (montoPesos === 0 && montoDolares === 0) {
+    finalSpan.textContent = `$${precioSugeridoPesos.toFixed(2)} (sugerido)`;
+    finalSpanUSD.textContent = `~ USD ${precioSugeridoUSD.toFixed(2)}`;
+  } else {
+    finalSpan.textContent = `$${montoRealPesos.toFixed(2)} (pagado)`;
+    finalSpanUSD.textContent = `~ USD ${(montoRealPesos / tasaActual).toFixed(2)}`;
   }
+}
+
 
   bonificacionInput.addEventListener('input', actualizarPrecioFinal);
   document.getElementById('moneda').addEventListener('change', actualizarPrecioFinal);
   document.getElementById('monto-pesos').addEventListener('input', actualizarPrecioFinal);
   document.getElementById('monto-dolares').addEventListener('input', actualizarPrecioFinal);
+  tasaCambioInput.addEventListener('input', actualizarPrecioFinal);
 
   const form = document.getElementById('form-venta');
   form.addEventListener('submit', e => {
@@ -402,7 +417,7 @@ setTimeout(() => {
     const fecha = form[0].value;
     const montoPesos = parseFloat(document.getElementById('monto-pesos').value) || 0;
     const montoDolares = parseFloat(document.getElementById('monto-dolares').value) || 0;
-    const tasaCambio = parseFloat(tasaCambioGlobal || 0);
+    const tasaCambio = parseFloat(tasaCambioGlobal || 1);
     const precioCompra = parseFloat(precioCompraGlobal || 0);
 
     const ventaEnPesos = montoPesos + (montoDolares * tasaCambio);
@@ -427,10 +442,8 @@ setTimeout(() => {
       ganancia: ganancia.toFixed(2)
     };
 
-    // Guardar la venta en Firebase
     db.ref('ventas').push(venta)
       .then(() => {
-        // Actualizar la ganancia acumulada del día
         const gananciaRef = db.ref('ganancias').child(fecha);
         return gananciaRef.once('value').then(snapshot => {
           const actual = parseFloat(snapshot.val()) || 0;
@@ -438,7 +451,6 @@ setTimeout(() => {
         });
       })
       .then(() => {
-        // Eliminar el producto vendido de mercadería
         if (productoKey) {
           return db.ref('mercaderia').child(productoKey).remove();
         }
@@ -451,9 +463,7 @@ setTimeout(() => {
       })
       .catch(err => alert('❌ Error al guardar la venta o ganancia: ' + err.message));
   });
-
 }, 100);
-
 
 } else if (tipo === "gasto") {
         contenedor.innerHTML = `
