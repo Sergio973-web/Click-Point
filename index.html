@@ -657,6 +657,12 @@ function cargarConsulta() {
 
     const claves = Object.keys(entradas[0][1]);
 
+    // Agregamos una columna adicional calculada
+    const indexCompra = claves.indexOf("precioCompra");
+    if (indexCompra !== -1) {
+      claves.splice(indexCompra + 1, 0, "precioCompraUSDreal");
+    }
+
     const filtradas = entradas.filter(([_, item]) =>
       claves.some(clave =>
         String(item[clave] ?? '').toLowerCase().includes(filtro)
@@ -678,7 +684,16 @@ function cargarConsulta() {
       <tbody>
         ${filtradas.map(([key, item]) => `
           <tr>
-            ${claves.map(clave => `<td class="px-4 py-2 border text-sm">${item[clave] ?? ''}</td>`).join("")}
+            ${claves.map(clave => {
+              if (clave === "precioCompraUSDreal") {
+                const tasa = parseFloat(item["tasaCambio"]);
+                const compra = parseFloat(item["precioCompra"]);
+                const usd = (!isNaN(tasa) && tasa > 0) ? (compra / tasa).toFixed(2) : '';
+                return `<td class="px-4 py-2 border text-sm">${usd}</td>`;
+              } else {
+                return `<td class="px-4 py-2 border text-sm">${item[clave] ?? ''}</td>`;
+              }
+            }).join("")}
             <td class="px-4 py-2 border text-center">
               <button onclick="editarItem('${tipo}', '${key}')" class="text-blue-600 hover:underline">✏️</button>
               <button onclick="eliminarItem('${tipo}', '${key}')" class="text-red-600 hover:underline ml-2">🗑️</button>
