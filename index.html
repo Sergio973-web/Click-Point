@@ -483,17 +483,18 @@ setTimeout(() => {
   `;
 
   setTimeout(() => {
-    // Cargar capital inicial guardado en Firebase
+    // Cargar capital inicial
     db.ref('capitalInicial').once('value', snapshot => {
       if (snapshot.exists()) {
         const data = snapshot.val();
         document.getElementById('capital-pesos').value = data.pesos || 0;
         document.getElementById('capital-dolares').value = data.dolares || 0;
+        document.getElementById('tasa-cambio').value = data.tasaCambio || 0;
       }
     });
 
     const formBalance = document.getElementById('form-balance');
-    formBalance.addEventListener('submit', e => {
+    formBalance.addEventListener('submit', async e => {
       e.preventDefault();
 
       const capitalPesos = parseFloat(document.getElementById('capital-pesos').value) || 0;
@@ -501,22 +502,53 @@ setTimeout(() => {
       const tasaCambio = parseFloat(document.getElementById('tasa-cambio').value) || 0;
 
       // Guardar capital inicial actualizado en Firebase
-      db.ref('capitalInicial').set({
+      await db.ref('capitalInicial').set({
         pesos: capitalPesos,
         dolares: capitalDolares,
         tasaCambio: tasaCambio
       });
 
-      // Calcular balance total en ARS
+      // Convertir capital inicial a ARS
       const capitalDolaresEnPesos = capitalDolares * tasaCambio;
-      const balanceTotalARS = capitalPesos + capitalDolaresEnPesos;
+      const capitalInicialTotalARS = capitalPesos + capitalDolaresEnPesos;
+
+      // Obtener ganancias acumuladas (sumar todos los valores del nodo 'ganancias')
+      const gananciasSnapshot = await db.ref('ganancias').once('value');
+      let totalGanancias = 0;
+      if (gananciasSnapshot.exists()) {
+        const gananciasData = gananciasSnapshot.val();
+        for (const dia in gananciasData) {
+          totalGanancias += parseFloat(gananciasData[dia]) || 0;
+        }
+      }
+
+      // Obtener gastos acumulados (sumar todos los valores del nodo 'gastos')
+      // Aquí asumo que guardás los gastos de forma similar a ganancias, ejemplo:
+      // gastos: { '2025-07-25': 5000, '2025-07-26': 2000, ... }
+      const gastosSnapshot = await db.ref('gastos').once('value');
+      let totalGastos = 0;
+      if (gastosSnapshot.exists()) {
+        const gastosData = gastosSnapshot.val();
+        for (const dia in gastosData) {
+          totalGastos += parseFloat(gastosData[dia]) || 0;
+        }
+      }
+
+      // Calcular balance neto
+      const balanceNeto = capitalInicialTotalARS + totalGanancias - totalGastos;
 
       // Mostrar resultado
       const resultadoDiv = document.getElementById('resultado-balance');
-      resultadoDiv.textContent = `Balance total en ARS: $${balanceTotalARS.toFixed(2)} (Pesos: $${capitalPesos.toFixed(2)} + Dólares en ARS: $${capitalDolaresEnPesos.toFixed(2)})`;
+      resultadoDiv.innerHTML = `
+        <p>Capital inicial total en ARS: $${capitalInicialTotalARS.toFixed(2)}</p>
+        <p>Ganancias acumuladas: $${totalGanancias.toFixed(2)}</p>
+        <p>Gastos acumulados: $${totalGastos.toFixed(2)}</p>
+        <h3 class="mt-4 font-bold">Balance neto actual: $${balanceNeto.toFixed(2)}</h3>
+      `;
     });
   }, 100);
 }
+
     }
 
     // Función para normalizar y parsear número decimal con coma o punto
