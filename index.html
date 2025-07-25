@@ -248,6 +248,7 @@ function mostrarFormulario(tipo) {
           <input type="number" id="tasa-cambio-venta" class="border p-1 rounded w-24" step="0.01" min="0" value="0">
         </p>
         <p><strong>Precio final sugerido:</strong> <span id="precio-final">0.00</span> <span id="precio-final-usd" class="text-gray-500 text-sm"></span></p>
+        <p id="restante" class="text-sm font-semibold text-blue-700 mt-2"></p>
       </div>
 
       <label>Bonificación (%):
@@ -283,45 +284,40 @@ function mostrarFormulario(tipo) {
   `;
 
   setTimeout(() => {
-  const imeiInput = document.getElementById('imei-buscar');
-  const bonificacionInput = document.getElementById('bonificacion');
-  const modeloSpan = document.getElementById('venta-modelo');
-  const colorSpan = document.getElementById('venta-color');
-  const precioSpanARS = document.getElementById('venta-precio-ars');
-  const precioSpanUSD = document.getElementById('venta-precio-usd');
-  const finalSpan = document.getElementById('precio-final');
-  const finalSpanUSD = document.getElementById('precio-final-usd');
-  const tasaCambioInput = document.getElementById('tasa-cambio-venta');
-  const datosCelular = document.getElementById('datos-celular');
-  let productoKey = null;
-  let precioBaseARS = 0;
-  let precioBaseUSD = 0;
-  let precioCompraGlobal = 0;
-  let tasaCambioGlobal = 1;
+    const imeiInput = document.getElementById('imei-buscar');
+    const bonificacionInput = document.getElementById('bonificacion');
+    const modeloSpan = document.getElementById('venta-modelo');
+    const colorSpan = document.getElementById('venta-color');
+    const precioSpanARS = document.getElementById('venta-precio-ars');
+    const precioSpanUSD = document.getElementById('venta-precio-usd');
+    const finalSpan = document.getElementById('precio-final');
+    const finalSpanUSD = document.getElementById('precio-final-usd');
+    const tasaCambioInput = document.getElementById('tasa-cambio-venta');
+    const datosCelular = document.getElementById('datos-celular');
+    const restanteSpan = document.getElementById('restante');
+    const listaProductos = document.getElementById('lista-productos');
 
-  // **Agrego esta variable para guardar la tasa original con la que se tomó el producto**
-  let tasaOriginalCompra = 1;
+    let productoKey = null;
+    let precioBaseARS = 0;
+    let precioBaseUSD = 0;
+    let precioCompraGlobal = 0;
+    let tasaOriginalCompra = 1;
 
-  let imeiTimeout;
-  const listaProductos = document.getElementById('lista-productos');
+    let imeiTimeout;
 
-  imeiInput.addEventListener('input', () => {
-    clearTimeout(imeiTimeout);
-    imeiTimeout = setTimeout(() => {
-      const query = imeiInput.value.trim();
-      if (!query) {
-        datosCelular.classList.add('hidden');
-        listaProductos.classList.add('hidden');
-        listaProductos.innerHTML = '';
-        return;
-      }
+    imeiInput.addEventListener('input', () => {
+      clearTimeout(imeiTimeout);
+      imeiTimeout = setTimeout(() => {
+        const query = imeiInput.value.trim();
+        if (!query) return;
 
-      db.ref('mercaderia').orderByChild('imei')
-        .startAt(query)
-        .endAt(query + "\uf8ff")
-        .once('value')
-        .then(snapshot => {
-          if (snapshot.exists()) {
+        db.ref('mercaderia').orderByChild('imei')
+          .startAt(query)
+          .endAt(query + "\uf8ff")
+          .once('value')
+          .then(snapshot => {
+            if (!snapshot.exists()) return;
+
             listaProductos.innerHTML = '';
             listaProductos.classList.remove('hidden');
 
@@ -337,15 +333,11 @@ function mostrarFormulario(tipo) {
                 precioBaseARS = parseFloat(prod.precioVenta) || 0;
                 precioBaseUSD = parseFloat(prod.precioVentaUSD) || 0;
                 precioCompraGlobal = parseFloat(prod.precioCompra) || 0;
-                tasaCambioGlobal = parseFloat(prod.tasaCambio) || 1;
-
-                // **Guardo la tasa original que trae el producto para usar luego en cálculos**
-                tasaOriginalCompra = tasaCambioGlobal;
+                tasaOriginalCompra = parseFloat(prod.tasaCambio) || 1;
 
                 precioSpanARS.textContent = precioBaseARS.toFixed(2);
                 precioSpanUSD.textContent = precioBaseUSD.toFixed(2);
-
-                tasaCambioInput.value = tasaCambioGlobal.toFixed(2);
+                tasaCambioInput.value = tasaOriginalCompra.toFixed(2);
 
                 actualizarPrecioFinal();
 
@@ -356,116 +348,96 @@ function mostrarFormulario(tipo) {
               });
               listaProductos.appendChild(item);
             });
-          } else {
-            datosCelular.classList.add('hidden');
-            listaProductos.classList.add('hidden');
-            listaProductos.innerHTML = '';
-          }
-        })
-        .catch(err => {
-          console.error('Error al buscar IMEI:', err);
-          datosCelular.classList.add('hidden');
-          listaProductos.classList.add('hidden');
-          listaProductos.innerHTML = '';
-        });
+          });
+      }, 300);
+    });
 
-    }, 300);
-  });
+    function actualizarPrecioFinal() {
+      const bonif = parseFloat(bonificacionInput.value) || 0;
+      const tasaActual = parseFloat(tasaCambioInput.value) || 1;
+      const tasaOriginal = tasaOriginalCompra || 1;
 
-  function actualizarPrecioFinal() {
-  const bonif = parseFloat(bonificacionInput.value) || 0;
-  const tasaActual = parseFloat(tasaCambioInput.value) || 0;
+      let sugeridoPesos = precioBaseUSD * tasaActual * (1 - bonif / 100);
+      let sugeridoUSD = sugeridoPesos / tasaOriginal;
 
-  // Esta tasa original la guardaste al seleccionar el producto
-  const tasaOriginal = tasaCambioGlobal || 1; // tasa guardada al seleccionar producto
+      const montoPesos = parseFloat(document.getElementById('monto-pesos').value) || 0;
+      const montoDolares = parseFloat(document.getElementById('monto-dolares').value) || 0;
+      const totalPagadoUSD = montoDolares + (montoPesos / tasaActual);
 
-  // precioBaseUSD y precioBaseARS los asignaste también al seleccionar producto
-  // Precio sugerido en pesos = precioBaseUSD * tasaActual
-  let precioSugeridoPesos = precioBaseUSD * tasaActual;
+      if (montoPesos === 0 && montoDolares === 0) {
+        finalSpan.textContent = `$${sugeridoPesos.toFixed(2)} (sugerido)`;
+        finalSpanUSD.textContent = `~ USD ${sugeridoUSD.toFixed(2)}`;
+        restanteSpan.textContent = '';
+      } else {
+        finalSpan.textContent = `$${(montoPesos + montoDolares * tasaActual).toFixed(2)} (pagado)`;
+        finalSpanUSD.textContent = `~ USD ${totalPagadoUSD.toFixed(2)}`;
 
-  // Aplico la bonificación sobre pesos
-  precioSugeridoPesos = precioSugeridoPesos * (1 - bonif / 100);
-
-  // Precio sugerido en dólares = precio sugerido en pesos / tasa original
-  const precioSugeridoUSD = tasaOriginal > 0 ? precioSugeridoPesos / tasaOriginal : 0;
-
-  const montoPesos = parseFloat(document.getElementById('monto-pesos').value) || 0;
-  const montoDolares = parseFloat(document.getElementById('monto-dolares').value) || 0;
-
-  const montoRealPesos = montoPesos + (montoDolares * tasaActual);
-
-  if (montoPesos === 0 && montoDolares === 0) {
-    finalSpan.textContent = `$${precioSugeridoPesos.toFixed(2)} (sugerido)`;
-    finalSpanUSD.textContent = `~ USD ${precioSugeridoUSD.toFixed(2)}`;
-  } else {
-    finalSpan.textContent = `$${montoRealPesos.toFixed(2)} (pagado)`;
-    finalSpanUSD.textContent = `~ USD ${(montoRealPesos / tasaActual).toFixed(2)}`;
-  }
-}
-
-
-  bonificacionInput.addEventListener('input', actualizarPrecioFinal);
-  document.getElementById('moneda').addEventListener('change', actualizarPrecioFinal);
-  document.getElementById('monto-pesos').addEventListener('input', actualizarPrecioFinal);
-  document.getElementById('monto-dolares').addEventListener('input', actualizarPrecioFinal);
-  tasaCambioInput.addEventListener('input', actualizarPrecioFinal);
-
-  const form = document.getElementById('form-venta');
-  form.addEventListener('submit', e => {
-    e.preventDefault();
-
-    const fecha = form[0].value;
-    const montoPesos = parseFloat(document.getElementById('monto-pesos').value) || 0;
-    const montoDolares = parseFloat(document.getElementById('monto-dolares').value) || 0;
-    const tasaCambio = parseFloat(tasaCambioGlobal || 1);
-    const precioCompra = parseFloat(precioCompraGlobal || 0);
-
-    const ventaEnPesos = montoPesos + (montoDolares * tasaCambio);
-    const ganancia = ventaEnPesos - precioCompra;
-
-    const venta = {
-      fecha,
-      cliente: form[1].value.trim(),
-      dni: form[2].value.trim(),
-      imei: imeiInput.value.trim(),
-      modelo: modeloSpan.textContent,
-      color: colorSpan.textContent,
-      bonificacion: parseFloat(bonificacionInput.value) || 0,
-      moneda: document.getElementById('moneda').value,
-      formaPago: document.getElementById('forma-pago').value,
-      montoPesos,
-      montoDolares,
-      observaciones: document.getElementById('observaciones').value.trim(),
-      creadoEn: new Date().toISOString(),
-      precioCompra,
-      tasaCambio,
-      ganancia: ganancia.toFixed(2)
-    };
-
-    db.ref('ventas').push(venta)
-      .then(() => {
-        const gananciaRef = db.ref('ganancias').child(fecha);
-        return gananciaRef.once('value').then(snapshot => {
-          const actual = parseFloat(snapshot.val()) || 0;
-          return gananciaRef.set(actual + ganancia);
-        });
-      })
-      .then(() => {
-        if (productoKey) {
-          return db.ref('mercaderia').child(productoKey).remove();
+        const faltanteUSD = precioBaseUSD - totalPagadoUSD;
+        if (faltanteUSD > 0) {
+          const faltaEnPesos = faltanteUSD * tasaActual;
+          restanteSpan.textContent = `Faltan: USD ${faltanteUSD.toFixed(2)} o $${faltaEnPesos.toFixed(2)} para completar.`;
+          restanteSpan.className = 'text-red-600 font-semibold';
+        } else {
+          restanteSpan.textContent = `Pago completo.`;
+          restanteSpan.className = 'text-green-600 font-semibold';
         }
-      })
-      .then(() => {
-        alert("✅ Venta registrada con éxito");
-        form.reset();
-        datosCelular.classList.add('hidden');
-        location.reload();
-      })
-      .catch(err => alert('❌ Error al guardar la venta o ganancia: ' + err.message));
-  });
-}, 100);
+      }
+    }
 
-} else if (tipo === "gasto") {
+    bonificacionInput.addEventListener('input', actualizarPrecioFinal);
+    document.getElementById('moneda').addEventListener('change', actualizarPrecioFinal);
+    document.getElementById('monto-pesos').addEventListener('input', actualizarPrecioFinal);
+    document.getElementById('monto-dolares').addEventListener('input', actualizarPrecioFinal);
+    tasaCambioInput.addEventListener('input', actualizarPrecioFinal);
+
+    document.getElementById('form-venta').addEventListener('submit', e => {
+      e.preventDefault();
+
+      const form = e.target;
+      const fecha = form[0].value;
+      const montoPesos = parseFloat(document.getElementById('monto-pesos').value) || 0;
+      const montoDolares = parseFloat(document.getElementById('monto-dolares').value) || 0;
+      const tasaCambio = parseFloat(tasaCambioInput.value) || 1;
+      const ventaEnPesos = montoPesos + (montoDolares * tasaCambio);
+      const ganancia = ventaEnPesos - precioCompraGlobal;
+
+      const venta = {
+        fecha,
+        cliente: form[1].value.trim(),
+        dni: form[2].value.trim(),
+        imei: imeiInput.value.trim(),
+        modelo: modeloSpan.textContent,
+        color: colorSpan.textContent,
+        bonificacion: parseFloat(bonificacionInput.value) || 0,
+        moneda: document.getElementById('moneda').value,
+        formaPago: document.getElementById('forma-pago').value,
+        montoPesos,
+        montoDolares,
+        observaciones: document.getElementById('observaciones').value.trim(),
+        creadoEn: new Date().toISOString(),
+        precioCompra: precioCompraGlobal,
+        tasaCambio,
+        ganancia: ganancia.toFixed(2)
+      };
+
+      db.ref('ventas').push(venta)
+        .then(() => db.ref('ganancias').child(fecha).once('value'))
+        .then(snapshot => {
+          const actual = parseFloat(snapshot.val()) || 0;
+          return db.ref('ganancias').child(fecha).set(actual + ganancia);
+        })
+        .then(() => productoKey && db.ref('mercaderia').child(productoKey).remove())
+        .then(() => {
+          alert("✅ Venta registrada con éxito");
+          form.reset();
+          datosCelular.classList.add('hidden');
+          location.reload();
+        })
+        .catch(err => alert('❌ Error al guardar la venta: ' + err.message));
+    });
+  }, 100);
+}
+ else if (tipo === "gasto") {
         contenedor.innerHTML = `
           <h2 class="text-2xl font-bold mb-4 text-red-700">Registrar Gasto</h2>
           <form id="form-gasto" class="grid grid-cols-1 gap-4">
