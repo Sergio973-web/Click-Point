@@ -73,6 +73,8 @@ function mostrarFormulario(tipo) {
 
       <input class="border p-2 rounded" type="number" id="tasa-cambio" placeholder="Tasa de cambio USD a ARS" step="0.01" required>
       <input class="border p-2 rounded" type="number" id="precio-compra" placeholder="Precio de compra" step="0.01" required>
+      <input class="border p-2 rounded" type="number" id="porcentaje-ganancia" placeholder="% de ganancia sugerido" step="1" value="40">
+
       <input class="border p-2 rounded" type="number" id="precio-venta-ars" placeholder="Precio de venta sugerido ARS" step="0.01" required>
       <input class="border p-2 rounded" type="number" id="precio-venta-usd" placeholder="Precio de venta sugerido USD" step="0.01" required>
 
@@ -93,10 +95,40 @@ function mostrarFormulario(tipo) {
 
     const monedaSelect = document.getElementById("moneda-compra");
     const tasaCambioInput = document.getElementById("tasa-cambio");
+    const porcentajeGananciaInput = document.getElementById("porcentaje-ganancia");
+    const precioCompraInput = document.getElementById("precio-compra");
     const precioVentaARSInput = document.getElementById("precio-venta-ars");
     const precioVentaUSDInput = document.getElementById("precio-venta-usd");
 
-    // ✅ Si la moneda es ARS, al escribir el precio en ARS se calcula el USD
+    function calcularPrecioVentaSugerido() {
+      const compra = parseFloat(precioCompraInput.value) || 0;
+      const porcentaje = parseFloat(porcentajeGananciaInput.value) || 0;
+      const tasa = parseFloat(tasaCambioInput.value) || 1;
+      const moneda = monedaSelect.value;
+
+      if (compra > 0 && porcentaje >= 0) {
+        let ventaUSD = 0;
+        let ventaARS = 0;
+
+        if (moneda === "USD") {
+          ventaUSD = compra * (1 + porcentaje / 100);
+          ventaARS = ventaUSD * tasa;
+        } else if (moneda === "ARS") {
+          ventaARS = compra * (1 + porcentaje / 100);
+          ventaUSD = tasa > 0 ? ventaARS / tasa : 0;
+        }
+
+        precioVentaUSDInput.value = ventaUSD.toFixed(2);
+        precioVentaARSInput.value = Math.ceil(ventaARS);
+
+      }
+    }
+
+    precioCompraInput.addEventListener("input", calcularPrecioVentaSugerido);
+    porcentajeGananciaInput.addEventListener("input", calcularPrecioVentaSugerido);
+    monedaSelect.addEventListener("change", calcularPrecioVentaSugerido);
+    tasaCambioInput.addEventListener("input", calcularPrecioVentaSugerido);
+
     precioVentaARSInput.addEventListener("input", () => {
       if (monedaSelect.value === "ARS") {
         const precioARS = parseFloat(precioVentaARSInput.value) || 0;
@@ -106,22 +138,6 @@ function mostrarFormulario(tipo) {
       }
     });
 
-    // ✅ Si cambia la tasa de cambio y la moneda es ARS, se recalcula USD
-    tasaCambioInput.addEventListener("input", () => {
-      if (monedaSelect.value === "ARS") {
-        const precioARS = parseFloat(precioVentaARSInput.value) || 0;
-        const tasa = parseFloat(tasaCambioInput.value) || 1;
-        const precioUSD = precioARS / tasa;
-        precioVentaUSDInput.value = precioUSD.toFixed(2);
-      } else if (monedaSelect.value === "USD") {
-        const precioUSD = parseFloat(precioVentaUSDInput.value) || 0;
-        const tasa = parseFloat(tasaCambioInput.value) || 1;
-        const precioARS = precioUSD * tasa;
-        precioVentaARSInput.value = precioARS.toFixed(2);
-      }
-    });
-
-    // ✅ Si la moneda es USD, al escribir el precio en USD se calcula el ARS
     precioVentaUSDInput.addEventListener("input", () => {
       if (monedaSelect.value === "USD") {
         const precioUSD = parseFloat(precioVentaUSDInput.value) || 0;
@@ -130,6 +146,22 @@ function mostrarFormulario(tipo) {
         precioVentaARSInput.value = precioARS.toFixed(2);
       }
     });
+
+    tasaCambioInput.addEventListener("input", () => {
+      const tasa = parseFloat(tasaCambioInput.value) || 1;
+
+      if (monedaSelect.value === "ARS") {
+        const precioARS = parseFloat(precioVentaARSInput.value) || 0;
+        const precioUSD = precioARS / tasa;
+        precioVentaUSDInput.value = precioUSD.toFixed(2);
+      } else if (monedaSelect.value === "USD") {
+        const precioUSD = parseFloat(precioVentaUSDInput.value) || 0;
+        const precioARS = precioUSD * tasa;
+        precioVentaARSInput.value = precioARS.toFixed(2);
+      }
+    });
+
+    calcularPrecioVentaSugerido();
 
     form.addEventListener("submit", function (e) {
       e.preventDefault();
@@ -175,7 +207,8 @@ function mostrarFormulario(tipo) {
         });
     });
   }, 100);
-} else if (tipo === "venta") {
+}
+ else if (tipo === "venta") {
   contenedor.innerHTML = `
     <h2 class="text-2xl font-bold mb-4 text-green-700">Venta</h2>
     <form id="form-venta" class="grid grid-cols-1 gap-4">
@@ -461,7 +494,7 @@ setTimeout(() => {
         `;
       }
 
- else if (tipo === "balance") {
+else if (tipo === "balance") {
   contenedor.innerHTML = `
     <h2 class="text-2xl font-bold mb-4 text-purple-700">Balance General - Capital Inicial</h2>
     <form id="form-balance" class="grid grid-cols-1 gap-4">
@@ -549,7 +582,7 @@ setTimeout(() => {
   }, 100);
 }
 
-    }
+}
 
     // Función para normalizar y parsear número decimal con coma o punto
     function parseDecimal(valor) {
