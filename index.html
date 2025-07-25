@@ -73,7 +73,8 @@ function mostrarFormulario(tipo) {
 
       <input class="border p-2 rounded" type="number" id="tasa-cambio" placeholder="Tasa de cambio USD a ARS" step="0.01" required>
       <input class="border p-2 rounded" type="number" id="precio-compra" placeholder="Precio de compra" step="0.01" required>
-      <input class="border p-2 rounded" type="number" id="porcentaje-ganancia" placeholder="% de ganancia sugerido" step="1" value="40">
+      <input class="border p-2 rounded" type="number" id="porcentaje-ganancia" placeholder="% de ganancia sugerido" step="1">
+      <input class="border p-2 rounded" type="number" id="ganancia-fija" placeholder="Ganancia fija en USD" step="0.01">
 
       <input class="border p-2 rounded" type="number" id="precio-venta-ars" placeholder="Precio de venta sugerido ARS" step="0.01" required>
       <input class="border p-2 rounded" type="number" id="precio-venta-usd" placeholder="Precio de venta sugerido USD" step="0.01" required>
@@ -96,6 +97,7 @@ function mostrarFormulario(tipo) {
     const monedaSelect = document.getElementById("moneda-compra");
     const tasaCambioInput = document.getElementById("tasa-cambio");
     const porcentajeGananciaInput = document.getElementById("porcentaje-ganancia");
+    const gananciaFijaInput = document.getElementById("ganancia-fija");
     const precioCompraInput = document.getElementById("precio-compra");
     const precioVentaARSInput = document.getElementById("precio-venta-ars");
     const precioVentaUSDInput = document.getElementById("precio-venta-usd");
@@ -103,32 +105,51 @@ function mostrarFormulario(tipo) {
     function calcularPrecioVentaSugerido() {
       const compra = parseFloat(precioCompraInput.value) || 0;
       const porcentaje = parseFloat(porcentajeGananciaInput.value) || 0;
-      const tasa = parseFloat(tasaCambioInput.value) || 1;
+      const gananciaFija = parseFloat(gananciaFijaInput.value) || 0;
+      const tasa = parseFloat(tasaCambioInput.value) || 0;
       const moneda = monedaSelect.value;
 
-      if (compra > 0 && porcentaje >= 0) {
+      if (compra > 0 && tasa > 0 && moneda) {
         let ventaUSD = 0;
-        let ventaARS = 0;
 
-        if (moneda === "USD") {
-          ventaUSD = compra * (1 + porcentaje / 100);
-          ventaARS = ventaUSD * tasa;
-        } else if (moneda === "ARS") {
-          ventaARS = compra * (1 + porcentaje / 100);
-          ventaUSD = tasa > 0 ? ventaARS / tasa : 0;
+        if (gananciaFija > 0) {
+          if (moneda === "USD") {
+            ventaUSD = compra + gananciaFija;
+          } else {
+            // Si la compra es en ARS, convertimos a USD para sumar ganancia fija
+            const compraUSD = compra / tasa;
+            ventaUSD = compraUSD + gananciaFija;
+          }
+        } else {
+          if (moneda === "USD") {
+            ventaUSD = compra * (1 + porcentaje / 100);
+          } else {
+            const compraUSD = compra / tasa;
+            ventaUSD = compraUSD * (1 + porcentaje / 100);
+          }
         }
 
-        precioVentaUSDInput.value = ventaUSD.toFixed(2);
-        precioVentaARSInput.value = Math.ceil(ventaARS);
+        const ventaARS = ventaUSD * tasa;
 
+        precioVentaUSDInput.value = ventaUSD.toFixed(2);
+        precioVentaARSInput.value = ventaARS.toFixed(2);
       }
     }
 
+    // Listeners para recalcular precio cuando cambie cualquiera de los inputs
     precioCompraInput.addEventListener("input", calcularPrecioVentaSugerido);
-    porcentajeGananciaInput.addEventListener("input", calcularPrecioVentaSugerido);
+    porcentajeGananciaInput.addEventListener("input", () => {
+      gananciaFijaInput.value = ''; // Limpiar ganancia fija si se pone porcentaje
+      calcularPrecioVentaSugerido();
+    });
+    gananciaFijaInput.addEventListener("input", () => {
+      porcentajeGananciaInput.value = ''; // Limpiar porcentaje si se pone ganancia fija
+      calcularPrecioVentaSugerido();
+    });
     monedaSelect.addEventListener("change", calcularPrecioVentaSugerido);
     tasaCambioInput.addEventListener("input", calcularPrecioVentaSugerido);
 
+    // Sin cambios: recalcula si escriben directamente precios sugeridos
     precioVentaARSInput.addEventListener("input", () => {
       if (monedaSelect.value === "ARS") {
         const precioARS = parseFloat(precioVentaARSInput.value) || 0;
@@ -208,6 +229,7 @@ function mostrarFormulario(tipo) {
     });
   }, 100);
 }
+
  else if (tipo === "venta") {
   contenedor.innerHTML = `
     <h2 class="text-2xl font-bold mb-4 text-green-700">Venta</h2>
