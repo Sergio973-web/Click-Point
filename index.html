@@ -415,8 +415,13 @@ function mostrarFormulario(tipo) {
         montoDolares,
         observaciones: document.getElementById('observaciones').value.trim(),
         creadoEn: new Date().toISOString(),
+      
+        // Nuevos campos relevantes
         precioCompra: precioCompraGlobal,
-        tasaCambio,
+        precioCompraUSDreal: (precioCompraGlobal / tasaOriginalCompra).toFixed(2),
+        tasaCambioVenta: tasaCambio,
+        tasaCambioCompra: tasaOriginalCompra,
+      
         ganancia: ganancia.toFixed(2)
       };
 
