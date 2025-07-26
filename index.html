@@ -325,7 +325,7 @@ function mostrarFormulario(tipo) {
             Object.entries(snapshot.val()).forEach(([key, prod]) => {
               const item = document.createElement('div');
               item.className = 'cursor-pointer p-1 hover:bg-gray-200';
-              item.textContent = ${prod.modelo} - ${prod.color} - IMEI: ${prod.imei};
+              item.textContent = `${prod.modelo} - ${prod.color} - IMEI: ${prod.imei}`;
               item.addEventListener('click', () => {
                 productoKey = key;
                 modeloSpan.textContent = prod.modelo;
@@ -368,20 +368,20 @@ function mostrarFormulario(tipo) {
       const totalPagadoUSD = montoDolares + (montoPesos / tasaActual);
 
       if (montoPesos === 0 && montoDolares === 0) {
-        finalSpan.textContent = $${sugeridoPesos.toFixed(2)} (sugerido);
-        finalSpanUSD.textContent = ~ USD ${sugeridoUSD.toFixed(2)};
+        finalSpan.textContent = `$${sugeridoPesos.toFixed(2)} (sugerido)`;
+        finalSpanUSD.textContent = `~ USD ${sugeridoUSD.toFixed(2)}`;
         restanteSpan.textContent = '';
       } else {
-        finalSpan.textContent = $${(montoPesos + montoDolares * tasaActual).toFixed(2)} (pagado);
-        finalSpanUSD.textContent = ~ USD ${totalPagadoUSD.toFixed(2)};
+        finalSpan.textContent = `$${(montoPesos + montoDolares * tasaActual).toFixed(2)} (pagado)`;
+        finalSpanUSD.textContent = `~ USD ${totalPagadoUSD.toFixed(2)}`;
 
         const faltanteUSD = precioBaseUSD - totalPagadoUSD;
         if (faltanteUSD > 0) {
           const faltaEnPesos = faltanteUSD * tasaActual;
-          restanteSpan.textContent = Faltan: USD ${faltanteUSD.toFixed(2)} o $${faltaEnPesos.toFixed(2)} para completar.;
+          restanteSpan.textContent = `Faltan: USD ${faltanteUSD.toFixed(2)} o $${faltaEnPesos.toFixed(2)} para completar.`;
           restanteSpan.className = 'text-red-600 font-semibold';
         } else {
-          restanteSpan.textContent = Pago completo.;
+          restanteSpan.textContent = `Pago completo.`;
           restanteSpan.className = 'text-green-600 font-semibold';
         }
       }
@@ -641,14 +641,14 @@ function cargarConsulta() {
 
   db.ref(tipo).limitToLast(100).once("value", snapshot => {
     if (!snapshot.exists()) {
-      tablaContenedor.innerHTML = <p class="text-gray-600">No hay datos para mostrar.</p>;
+      tablaContenedor.innerHTML = `<p class="text-gray-600">No hay datos para mostrar.</p>`;
       return;
     }
 
     const datos = snapshot.val();
     const entradas = Object.entries(datos);
     if (entradas.length === 0) {
-      tablaContenedor.innerHTML = <p class="text-gray-600">No hay entradas.</p>;
+      tablaContenedor.innerHTML = `<p class="text-gray-600">No hay entradas.</p>`;
       return;
     }
 
@@ -669,7 +669,7 @@ function cargarConsulta() {
     );
 
     if (filtradas.length === 0) {
-      tablaContenedor.innerHTML = <p class="text-gray-600">No se encontraron resultados para "${filtro}".</p>;
+      tablaContenedor.innerHTML = `<p class="text-gray-600">No se encontraron resultados para "${filtro}".</p>`;
       return;
     }
 
@@ -677,7 +677,7 @@ function cargarConsulta() {
     let html = `<table class="min-w-full bg-white border border-gray-300">
       <thead>
         <tr>
-          ${claves.map(c => <th class="px-4 py-2 border">${c}</th>).join("")}
+          ${claves.map(c => `<th class="px-4 py-2 border">${c}</th>`).join("")}
           <th class="px-4 py-2 border">Acciones</th>
         </tr>
       </thead>
@@ -686,11 +686,11 @@ function cargarConsulta() {
           <tr>
             ${claves.map(clave => {
               // Mostramos el valor tal cual para las columnas extras también
-              return <td class="px-4 py-2 border text-sm">${item[clave] ?? ''}</td>;
+              return `<td class="px-4 py-2 border text-sm">${item[clave] ?? ''}</td>`;
             }).join("")}
             <td class="px-4 py-2 border text-center">
-              <button onclick="editarItem('${tipo}', '${key}')" class="text-blue-600 hover:underline">✏</button>
-              <button onclick="eliminarItem('${tipo}', '${key}')" class="text-red-600 hover:underline ml-2">🗑</button>
+              <button onclick="editarItem('${tipo}', '${key}')" class="text-blue-600 hover:underline">✏️</button>
+              <button onclick="eliminarItem('${tipo}', '${key}')" class="text-red-600 hover:underline ml-2">🗑️</button>
             </td>
           </tr>
         `).join("")}
@@ -741,7 +741,7 @@ function verGananciasMensuales() {
             return;
           }
           if (!(imeiVenta in mapaCompras)) {
-            console.warn(No se encontró precio de compra para IMEI: ${imeiVenta});
+            console.warn(`No se encontró precio de compra para IMEI: ${imeiVenta}`);
             // Opcional: podrías descontar el precioVenta como pérdida, o ignorar esta venta
             return;
           }
@@ -762,7 +762,7 @@ function verGananciasMensuales() {
 
         const gananciaNeta = gananciaBruta - gastosMes;
         document.getElementById('resultado-ganancia-mensual').textContent = 
-          Ganancia neta en ${mesAnio}: $${gananciaNeta.toFixed(2)} (Ganancia bruta: $${gananciaBruta.toFixed(2)} - Gastos: $${gastosMes.toFixed(2)});
+          `Ganancia neta en ${mesAnio}: $${gananciaNeta.toFixed(2)} (Ganancia bruta: $${gananciaBruta.toFixed(2)} - Gastos: $${gastosMes.toFixed(2)})`;
       });
     });
   });
@@ -770,7 +770,7 @@ function verGananciasMensuales() {
 
 function eliminarItem(tipo, id) {
   if (confirm("¿Estás seguro que deseas eliminar este registro?")) {
-    db.ref(${tipo}/${id}).remove().then(() => {
+    db.ref(`${tipo}/${id}`).remove().then(() => {
       alert("Elemento eliminado");
       cargarConsulta();
     });
@@ -778,7 +778,7 @@ function eliminarItem(tipo, id) {
 }
 
 function editarItem(tipo, id) {
-  db.ref(${tipo}/${id}).once("value", snapshot => {
+  db.ref(`${tipo}/${id}`).once("value", snapshot => {
     if (!snapshot.exists()) return alert("Elemento no encontrado");
 
     const datos = snapshot.val();
@@ -808,7 +808,7 @@ function editarItem(tipo, id) {
       if (actualizado.precioCompra) actualizado.precioCompra = parseDecimal(actualizado.precioCompra);
       if (actualizado.precioVenta) actualizado.precioVenta = parseDecimal(actualizado.precioVenta);
 
-      db.ref(${tipo}/${id}).set(actualizado).then(() => {
+      db.ref(`${tipo}/${id}`).set(actualizado).then(() => {
         alert("✅ Datos actualizados");
         mostrarFormulario("consulta");
       });
@@ -859,7 +859,7 @@ function calcularBalanceSeparado(capitalPesos, capitalDolares, tasaCambio) {
           if (imeiVenta && mapaCompra[imeiVenta]) {
             totalCostoCompra += mapaCompra[imeiVenta];
           } else {
-            console.warn(No se encontró precioCompra para IMEI: ${imeiVenta});
+            console.warn(`No se encontró precioCompra para IMEI: ${imeiVenta}`);
           }
         });
       }
@@ -924,7 +924,7 @@ function verGananciasPorRango() {
           total += data[fecha];
         }
       }
-      resultado.innerText = Ganancia total del ${desde} al ${hasta}: $${total.toLocaleString()};
+      resultado.innerText = `Ganancia total del ${desde} al ${hasta}: $${total.toLocaleString()}`;
     })
     .catch(error => {
       resultado.innerText = "Error al obtener datos.";
