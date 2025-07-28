@@ -735,9 +735,9 @@ function cargarConsulta() {
             ${claves.map(clave => {
               // Comprobar y mostrar los valores de cada clave de los datos
               if (clave === "precioCompraUSDreal") {
-                // Mostrar el valor de 'precioCompraUSDreal' al lado de 'precioCompra'
-                const precioCompraUSD = item["precioCompraUSDreal"] || '';  // Asegúrate de que 'precioCompraUSD' sea el nombre correcto en Firebase
-                return `<td class="px-4 py-2 border text-sm">${precioCompraUSD ? precioCompraUSDreal.toFixed(2) : ''}</td>`;
+                // Obtener el valor de 'precioCompraUSDreal' desde el objeto 'item'
+                const precioCompraUSD = item["precioCompraUSDreal"] || '';  // Asegúrate de que 'precioCompraUSDreal' esté correcto en Firebase
+                return `<td class="px-4 py-2 border text-sm">${precioCompraUSD ? precioCompraUSD.toFixed(2) : ''}</td>`;
               } else if (clave === "tasaCambioVenta") {
                 // Mostrar "Por definir" si 'tasaCambioVenta' no existe
                 const tasaVenta = item["tasaCambioVenta"];
@@ -751,13 +751,10 @@ function cargarConsulta() {
                 return `<td class="px-4 py-2 border text-sm">${item[clave] ?? ''}</td>`;
               }
             }).join("")}
-            <td class="px-4 py-2 border text-center">
-              <button onclick="editarItem('${tipo}', '${key}')" class="text-blue-600 hover:underline">✏️</button>
-              <button onclick="eliminarItem('${tipo}', '${key}')" class="text-red-600 hover:underline ml-2">🗑️</button>
-            </td>
           </tr>
         `).join("")}
       </tbody>
+
     </table>`;
 
     tablaContenedor.innerHTML = html;
