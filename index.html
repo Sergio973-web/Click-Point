@@ -707,8 +707,6 @@ function cargarConsulta() {
     // Obtener las claves de la primera entrada
     const claves = Object.keys(entradas[0][1]);
 
-    
-
     // Filtrar las entradas basadas en el filtro de búsqueda
     const filtradas = entradas.filter(([_, item]) =>
       claves.some(clave =>
@@ -735,36 +733,33 @@ function cargarConsulta() {
             ${claves.map(clave => {
               // Comprobar y mostrar los valores de cada clave de los datos
               if (clave === "precioCompraUSDreal") {
-  // Obtener el valor de 'precioCompraUSDreal'
-  const precioCompraUSD = item["precioCompraUSDreal"];
-  
-  // Verificar si es un string
-  let precioFormateado = '';
+                // Obtener el valor de 'precioCompraUSDreal'
+                const precioCompraUSD = item["precioCompraUSDreal"];
+                
+                // Verificar si es un string
+                let precioFormateado = '';
 
-  if (typeof precioCompraUSD === 'string') {
-    // Intentar convertir la cadena a un número
-    const parsedValue = parseFloat(precioCompraUSD);
+                if (typeof precioCompraUSD === 'string') {
+                  // Intentar convertir la cadena a un número
+                  const parsedValue = parseFloat(precioCompraUSD);
 
-    if (!isNaN(parsedValue)) {
-      // Si la cadena representa un número válido, lo formateamos a 2 decimales
-      precioFormateado = parsedValue.toFixed(2);
-    } else {
-      // Si no es un número válido, mostramos un mensaje de error o 'No disponible'
-      precioFormateado = 'Valor no válido';
-    }
-  } else if (typeof precioCompraUSD === 'number' && !isNaN(precioCompraUSD)) {
-    // Si es un número, lo formateamos a 2 decimales
-    precioFormateado = precioCompraUSD.toFixed(2);
-  } else {
-    // Si no es un número ni un string, mostramos 'No disponible'
-    precioFormateado = 'No disponible';
-  }
+                  if (!isNaN(parsedValue)) {
+                    // Si la cadena representa un número válido, lo formateamos a 2 decimales
+                    precioFormateado = parsedValue.toFixed(2);
+                  } else {
+                    // Si no es un número válido, mostramos un mensaje de error o 'No disponible'
+                    precioFormateado = 'Valor no válido';
+                  }
+                } else if (typeof precioCompraUSD === 'number' && !isNaN(precioCompraUSD)) {
+                  // Si es un número, lo formateamos a 2 decimales
+                  precioFormateado = precioCompraUSD.toFixed(2);
+                } else {
+                  // Si no es un número ni un string, mostramos 'No disponible'
+                  precioFormateado = 'No disponible';
+                }
 
-  // Devolvemos el valor formateado para mostrarlo en la tabla
-  return `<td class="px-4 py-2 border text-sm">${precioFormateado}</td>`;
-}
-
-
+                // Devolvemos el valor formateado para mostrarlo en la tabla
+                return `<td class="px-4 py-2 border text-sm">${precioFormateado}</td>`;
               } else if (clave === "tasaCambioVenta") {
                 // Mostrar "Por definir" si 'tasaCambioVenta' no existe
                 const tasaVenta = item["tasaCambioVenta"];
@@ -785,7 +780,6 @@ function cargarConsulta() {
           </tr>
         `).join("")}
       </tbody>
-
     </table>`;
 
     tablaContenedor.innerHTML = html;
