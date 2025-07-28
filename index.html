@@ -353,9 +353,9 @@ if (tipo === "mercaderia") {
                 tasaOriginalCompra = parseFloat(prod.tasaCambio) || 1;
                 monedaCompra = prod.monedaCompra || 'ARS'; // ✅ Se obtiene de la DB
                 // Aquí accedemos directamente al precioCompraUSDreal de Firebase
-                const precioCompraUSDreal = parseFloat(prod.precioCompraUSDreal) || 0; // O usa prod.precioCompraUSD si ese es el campo adecuado
+                const precioCompraUSD = parseFloat(prod.precioCompraUSD) || 0; // O usa prod.precioCompraUSD si ese es el campo adecuado
 
-                console.log("Precio de Compra en USD Real:", precioCompraUSDreal); // Esto se debe ver en el console log
+                console.log("Precio de Compra en USD Real:", precioCompraUSD); // Esto se debe ver en el console log
 
                 precioSpanARS.textContent = precioBaseARS.toFixed(2);
                 precioSpanUSD.textContent = precioBaseUSD.toFixed(2);
