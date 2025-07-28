@@ -56,7 +56,7 @@ function mostrarFormulario(tipo) {
   const contenedor = document.getElementById("formulario");
   contenedor.classList.remove("hidden");
 
-  if (tipo === "mercaderia") {
+if (tipo === "mercaderia") {
   contenedor.innerHTML = `
     <h2 class="text-2xl font-bold mb-4 text-blue-700">Ingreso de Mercadería</h2>
     <form id="form-mercaderia" class="grid grid-cols-1 gap-4">
@@ -200,36 +200,52 @@ function mostrarFormulario(tipo) {
       const estado = document.getElementById("estado").value;
       const observaciones = document.getElementById("observaciones").value.trim();
 
+      // **Precio de compra en USD** (sin convertir a ARS)
+      const precioCompraUSD = monedaCompra === 'USD' ? precioCompra : precioCompra / tasaCambio;
+
+      // **Precio de compra en ARS** solo si es necesario
       const precioCompraEnARS = monedaCompra === 'USD' ? precioCompra * tasaCambio : precioCompra;
 
-      const producto = {
-        imei,
-        modelo,
-        color,
-        duracionBateria: duracion,
-        monedaCompra,
-        tasaCambio,
-        precioCompra: precioCompraEnARS,
-        precioVenta: precioVentaARS,
-        precioVentaUSD: precioVentaUSD,
-        fechaIngreso: fecha,
-        estado,
-        observaciones,
-        creadoEn: new Date().toISOString()
-      };
+      // Verificación de que el IMEI no existe
+      db.ref('mercaderia').orderByChild('imei').equalTo(imei).once('value', snapshot => {
+        if (snapshot.exists()) {
+          // Si ya existe un producto con el mismo IMEI, mostramos un mensaje de error
+          alert('❌ El IMEI ya está registrado. Por favor, ingresa un IMEI diferente.');
+          return;  // No continuar con el registro del producto
+        }
 
-      db.ref('mercaderia').push(producto)
-        .then(() => {
-          alert('📦 Producto guardado correctamente.');
-          form.reset();
-        })
-        .catch(err => {
-          alert('❌ Error al guardar el producto: ' + err.message);
-        });
+        // Si no existe el IMEI, continuamos con el registro del producto
+        const producto = {
+          imei,
+          modelo,
+          color,
+          duracionBateria: duracion,
+          monedaCompra,
+          tasaCambio,
+          precioCompraUSD,  // Guardamos directamente en USD
+          precioCompra: precioCompraEnARS,  // Guardamos el precio en ARS si es necesario
+          precioVenta: precioVentaARS,
+          precioVentaUSD: precioVentaUSD,
+          fechaIngreso: fecha,
+          estado,
+          observaciones,
+          creadoEn: new Date().toISOString()
+        };
+
+        // Guardamos el producto en Firebase
+        db.ref('mercaderia').push(producto)
+          .then(() => {
+            alert('📦 Producto guardado correctamente.');
+            form.reset();  // Limpiar el formulario
+          })
+          .catch(err => {
+            alert('❌ Error al guardar el producto: ' + err.message);
+          });
+      });
     });
+
   }, 100);
 }
-
  else if (tipo === "venta") {
   contenedor.innerHTML = `
     <h2 class="text-2xl font-bold mb-4 text-green-700">Venta</h2>
@@ -336,6 +352,10 @@ function mostrarFormulario(tipo) {
                 precioCompraGlobal = parseFloat(prod.precioCompra) || 0;
                 tasaOriginalCompra = parseFloat(prod.tasaCambio) || 1;
                 monedaCompra = prod.monedaCompra || 'ARS'; // ✅ Se obtiene de la DB
+                // Aquí accedemos directamente al precioCompraUSDreal de Firebase
+                const precioCompraUSDreal = parseFloat(prod.precioCompraUSD) || 0; // O usa prod.precioCompraUSD si ese es el campo adecuado
+
+                console.log("Precio de Compra en USD Real:", precioCompraUSDreal); // Esto se debe ver en el console log
 
                 precioSpanARS.textContent = precioBaseARS.toFixed(2);
                 precioSpanUSD.textContent = precioBaseUSD.toFixed(2);
@@ -401,58 +421,90 @@ function mostrarFormulario(tipo) {
       const montoPesos = parseFloat(document.getElementById('monto-pesos').value) || 0;
       const montoDolares = parseFloat(document.getElementById('monto-dolares').value) || 0;
       const tasaCambio = parseFloat(tasaCambioInput.value) || 1;
-      const ventaEnPesos = montoPesos + (montoDolares * tasaCambio);
-      const ganancia = ventaEnPesos - precioCompraGlobal;
 
-      const venta = {
-        fecha,
-        cliente: form[1].value.trim(),
-        dni: form[2].value.trim(),
-        imei: imeiInput.value.trim(),
-        modelo: modeloSpan.textContent,
-        color: colorSpan.textContent,
-        bonificacion: parseFloat(bonificacionInput.value) || 0,
-        moneda: document.getElementById('moneda').value,
-        formaPago: document.getElementById('forma-pago').value,
-        montoPesos,
-        montoDolares,
-        observaciones: document.getElementById('observaciones').value.trim(),
-        creadoEn: new Date().toISOString(),
-
-        // ✅ Corrección completa
-        precioCompra: precioCompraGlobal,
-        precioCompraUSDreal: (() => {
-          if (monedaCompra === 'USD') return precioCompraGlobal.toFixed(2);
-          if (tasaOriginalCompra && tasaOriginalCompra > 0) {
-            return (precioCompraGlobal / tasaOriginalCompra).toFixed(2);
-          }
-          return '';
-        })(),
-        tasaCambioVenta: tasaCambio,
-        tasaCambioCompra: tasaOriginalCompra,
-        monedaCompra: monedaCompra || 'ARS',
-
-        ganancia: ganancia.toFixed(2)
-      };
-
-      db.ref('ventas').push(venta)
-        .then(() => db.ref('ganancias').child(fecha).once('value'))
+      // **Obtenemos el precio de compra en USD desde Firebase**
+      const productoRef = db.ref('mercaderia').child(productoKey);  // Producto clave
+      productoRef.once('value')
         .then(snapshot => {
-          const actual = parseFloat(snapshot.val()) || 0;
-          return db.ref('ganancias').child(fecha).set(actual + ganancia);
+          const producto = snapshot.val();
+          const precioCompraUSDreal = parseFloat(producto.precioCompraUSD) || 0;
+
+          // **Calculamos la venta en dólares**
+          const ventaEnDolares = montoDolares + (montoPesos / tasaCambio);
+
+          // **Calcular la ganancia en dólares**
+          const gananciaUSD = ventaEnDolares - precioCompraUSDreal;
+
+          // **Agregamos el console log para verificar el cálculo de la ganancia en USD**
+          console.log("Cálculo de ganancia en USD:");
+          console.log("Monto en Pesos:", montoPesos);
+          console.log("Monto en Dólares:", montoDolares);
+          console.log("Tasa de Cambio:", tasaCambio);
+          console.log("Precio de Compra en USD Real:", precioCompraUSDreal);
+          console.log("Ganancia en USD:", gananciaUSD);
+
+          const venta = {
+            fecha,
+            cliente: form[1].value.trim(),
+            dni: form[2].value.trim(),
+            imei: imeiInput.value.trim(),
+            modelo: modeloSpan.textContent,
+            color: colorSpan.textContent,
+            bonificacion: parseFloat(bonificacionInput.value) || 0,
+            moneda: document.getElementById('moneda').value,
+            formaPago: document.getElementById('forma-pago').value,
+            montoPesos,
+            montoDolares,
+            observaciones: document.getElementById('observaciones').value.trim(),
+            creadoEn: new Date().toISOString(),
+
+            // Guardamos el precio de compra en dólares y la ganancia en dólares
+            precioCompra: precioCompraGlobal,
+            precioCompraUSDreal: (() => {
+            if (monedaCompra === 'USD') {
+              // Si la compra fue en USD, guardamos el valor directamente en USD
+              return parseFloat(precioCompraUSDreal).toFixed(2);  // En dólares
+            } 
+            if (monedaCompra === 'ARS' && tasaOriginalCompra > 0) {
+              // Si la compra fue en pesos, lo convertimos a USD usando la tasa de cambio
+              return (precioCompraGlobal / tasaOriginalCompra).toFixed(2);  // En dólares
+            }
+            return '';  // Si no hay información válida, devolvemos un valor vacío
+          })(),
+
+            tasaCambioVenta: tasaCambio,
+            tasaCambioCompra: tasaOriginalCompra,
+            monedaCompra: monedaCompra || 'ARS',
+
+            // Ganancia en dólares
+            ganancia: gananciaUSD.toFixed(2)
+          };
+
+          // Guardamos la venta en Firebase
+          db.ref('ventas').push(venta)
+            .then(() => db.ref('ganancias').child(fecha).once('value'))
+            .then(snapshot => {
+              const actual = parseFloat(snapshot.val()) || 0;
+              return db.ref('ganancias').child(fecha).set(actual + gananciaUSD);
+            })
+            .then(() => productoKey && db.ref('mercaderia').child(productoKey).remove())
+            .then(() => {
+              alert("✅ Venta registrada con éxito");
+              form.reset();
+              datosCelular.classList.add('hidden');
+              location.reload();
+            })
+            .catch(err => alert('❌ Error al guardar la venta: ' + err.message));
         })
-        .then(() => productoKey && db.ref('mercaderia').child(productoKey).remove())
-        .then(() => {
-          alert("✅ Venta registrada con éxito");
-          form.reset();
-          datosCelular.classList.add('hidden');
-          location.reload();
-        })
-        .catch(err => alert('❌ Error al guardar la venta: ' + err.message));
+        .catch(err => {
+          alert("❌ Error al obtener los datos del producto: " + err.message);
+        });
     });
+
+
   }, 100);
-}
- else if (tipo === "gasto") {
+
+} else if (tipo === "gasto") {
         contenedor.innerHTML = `
           <h2 class="text-2xl font-bold mb-4 text-red-700">Registrar Gasto</h2>
           <form id="form-gasto" class="grid grid-cols-1 gap-4">
@@ -652,16 +704,12 @@ function cargarConsulta() {
       return;
     }
 
-    // Obtenemos las claves originales
-    let claves = Object.keys(entradas[0][1]);
+    // Obtener las claves de la primera entrada
+    const claves = Object.keys(entradas[0][1]);
 
-    // Aseguramos que estas columnas siempre aparezcan (aunque no estén en el primer registro)
-    const columnasExtra = ["precioCompraUSDreal", "tasaCambioCompra", "tasaCambioVenta"];
-    columnasExtra.forEach(col => {
-      if (!claves.includes(col)) claves.push(col);
-    });
+    
 
-    // Filtramos los datos según el input de búsqueda
+    // Filtrar las entradas basadas en el filtro de búsqueda
     const filtradas = entradas.filter(([_, item]) =>
       claves.some(clave =>
         String(item[clave] ?? '').toLowerCase().includes(filtro)
@@ -673,7 +721,7 @@ function cargarConsulta() {
       return;
     }
 
-    // Generamos la tabla HTML
+    // Crear la tabla HTML
     let html = `<table class="min-w-full bg-white border border-gray-300">
       <thead>
         <tr>
@@ -685,8 +733,23 @@ function cargarConsulta() {
         ${filtradas.map(([key, item]) => `
           <tr>
             ${claves.map(clave => {
-              // Mostramos el valor tal cual para las columnas extras también
-              return `<td class="px-4 py-2 border text-sm">${item[clave] ?? ''}</td>`;
+              // Comprobar y mostrar los valores de cada clave de los datos
+              if (clave === "precioCompraUSDreal") {
+                // Mostrar el valor de 'precioCompraUSDreal' al lado de 'precioCompra'
+                const precioCompraUSD = item["precioCompraUSD"] || '';  // Asegúrate de que 'precioCompraUSD' sea el nombre correcto en Firebase
+                return `<td class="px-4 py-2 border text-sm">${precioCompraUSD ? precioCompraUSD.toFixed(2) : ''}</td>`;
+              } else if (clave === "tasaCambioVenta") {
+                // Mostrar "Por definir" si 'tasaCambioVenta' no existe
+                const tasaVenta = item["tasaCambioVenta"];
+                return `<td class="px-4 py-2 border text-sm">${tasaVenta ? tasaVenta : 'Por definir'}</td>`;
+              } else if (clave === "tasaCambioCompra") {
+                // Mostrar tasa de compra si existe
+                const tasaCompra = item["tasaCambioCompra"];
+                return `<td class="px-4 py-2 border text-sm">${tasaCompra || ''}</td>`;
+              } else {
+                // Para las demás claves
+                return `<td class="px-4 py-2 border text-sm">${item[clave] ?? ''}</td>`;
+              }
             }).join("")}
             <td class="px-4 py-2 border text-center">
               <button onclick="editarItem('${tipo}', '${key}')" class="text-blue-600 hover:underline">✏️</button>
@@ -700,6 +763,7 @@ function cargarConsulta() {
     tablaContenedor.innerHTML = html;
   });
 }
+
 
     // NUEVA FUNCIÓN PARA GANANCIAS MENSUALES
 function verGananciasMensuales() {
@@ -906,31 +970,39 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function verGananciasPorRango() {
-  const desde = document.getElementById('fecha-desde').value;
-  const hasta = document.getElementById('fecha-hasta').value;
-  const resultado = document.getElementById('resultado-ganancia-rango');
+  const fechaDesde = document.getElementById('fecha-desde').value;
+  const fechaHasta = document.getElementById('fecha-hasta').value;
 
-  if (!desde || !hasta) {
-    resultado.innerText = "Selecciona ambas fechas.";
+  if (!fechaDesde || !fechaHasta) {
+    alert('Por favor, selecciona un rango de fechas válido.');
     return;
   }
 
-  fetch("https://clickpoint-59d0b-default-rtdb.firebaseio.com/ganancias.json")
-    .then(res => res.json())
-    .then(data => {
-      let total = 0;
-      for (let fecha in data) {
-        if (fecha >= desde && fecha <= hasta) {
-          total += data[fecha];
-        }
-      }
-      resultado.innerText = `Ganancia total del ${desde} al ${hasta}: $${total.toLocaleString()}`;
-    })
-    .catch(error => {
-      resultado.innerText = "Error al obtener datos.";
-      console.error(error);
+  // Convertir las fechas a strings en formato YYYY-MM-DD
+  const fechaInicio = fechaDesde;  // Ya están en el formato correcto
+  const fechaFin = fechaHasta;  // Lo mismo
+
+  const resultadoContenedor = document.getElementById('resultado-ganancia-rango');
+
+  // Consultar las ganancias acumuladas en dólares por el rango de fechas
+  db.ref('ganancias').orderByKey().startAt(fechaInicio).endAt(fechaFin + "\uf8ff").once('value', snapshot => {
+    if (!snapshot.exists()) {
+      resultadoContenedor.innerHTML = `<p class="text-gray-600">No se encontraron ganancias en dólares para este rango de fechas.</p>`;
+      return;
+    }
+
+    let totalGananciaUSD = 0;
+    snapshot.forEach(childSnapshot => {
+      totalGananciaUSD += parseFloat(childSnapshot.val()) || 0;
     });
+
+    resultadoContenedor.innerHTML = `
+      <h3 class="text-lg font-semibold text-gray-700">Ganancia Total en Dólares en el Rango:</h3>
+      <p class="text-gray-800">$${totalGananciaUSD.toFixed(2)}</p>
+    `;
+  });
 }
+
 
   </script>
 </body>
