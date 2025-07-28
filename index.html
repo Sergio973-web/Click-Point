@@ -736,7 +736,7 @@ function cargarConsulta() {
               // Comprobar y mostrar los valores de cada clave de los datos
               if (clave === "precioCompraUSDreal") {
                 // Mostrar el valor de 'precioCompraUSDreal' al lado de 'precioCompra'
-                const precioCompraUSD = item["precioCompraUSD"] || '';  // Asegúrate de que 'precioCompraUSD' sea el nombre correcto en Firebase
+                const precioCompraUSD = item["precioCompraUSDreal"] || '';  // Asegúrate de que 'precioCompraUSD' sea el nombre correcto en Firebase
                 return `<td class="px-4 py-2 border text-sm">${precioCompraUSD ? precioCompraUSD.toFixed(2) : ''}</td>`;
               } else if (clave === "tasaCambioVenta") {
                 // Mostrar "Por definir" si 'tasaCambioVenta' no existe
